@@ -29,7 +29,7 @@
       "memory": "{{user `memory`}}",
       "cpus": "{{user `cpus`}}",
       "headless": "{{user `headless`}}",
-      "http_directory": "http",
+      "http_directory": "packer/http",
       "communicator": "ssh",
       "vnc_bind_address": "0.0.0.0",
       "vnc_port_min": 5919,
