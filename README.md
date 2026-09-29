@@ -818,6 +818,21 @@ Jangan memublikasikan `docker-secret.yaml`.
 
 ![Ingress case 2](docs/images/ingress-case2.png)
 
+Hapus case 2 sebelum case 3 (atau sebelum matikan modul):
+
+```bash
+# HOST — hapus semua resource case 2
+cd kubernetes/apps/3_case2
+kubectl delete \
+  -f docker-secret.yaml \
+  -f tls-secret.yaml \
+  -f foo.yaml \
+  -f bar.yaml \
+  -f coba.yaml \
+  -f coba2.yaml \
+  -f ingress.yaml
+```
+
 ### Case 3 — log pod
 
 **Maksud:** pod sederhana yang menulis ke stdout.  
@@ -830,13 +845,52 @@ sh run.sh
 kubectl logs counter --tail=5
 ```
 
+```bash
+# HOST — hapus resource case 3
+cd kubernetes/apps/4_case3
+kubectl delete -f counter.yaml
+```
+
 ### Selesai Modul 6 — matikan
 
 **Maksud:** menghapus cluster kind dan menghentikan Octant.  
 **Tujuan:** host kembali bersih.
 
 ```bash
-# HOST — hapus cluster kind + hentikan Octant
+# HOST — dari root repo ka-tugas-cloud
 kind delete cluster --name mylab99
-kill "$(cat kubernetes/apps/1_visualizer/octant.pid)" 2>/dev/null || true
+kill "$(cat kubernetes/apps/1_visualizer/octant.pid)" 2>/dev/null || pkill -f './octant' || true
 ```
+
+### Cek host bersih (akhir praktikum)
+
+**Maksud:** memastikan tidak ada sisa proses/cluster/port dari modul lab.  
+**Tujuan:** daftar di bawah kosong / tidak listen.
+
+```bash
+# HOST — tidak boleh ada cluster kind
+kind get clusters
+# (output kosong / "No kind clusters found.")
+
+# HOST — container kind / lab tidak jalan
+docker ps
+# (tidak ada nama mylab99-* atau container case lab)
+
+# HOST — Octant mati
+ps aux | grep '[o]ctant' || true
+# (tidak ada proses ./octant)
+
+# HOST — port lab kosong
+ss -tlnp | grep -E ':80\s|:443\s|:16443\s|:22222\s|:9999\s|:10000\s' || echo 'port lab kosong'
+```
+
+Kalau masih ada yang nyangkut:
+
+| Sisa | Cara bersihkan |
+|------|----------------|
+| Cluster kind | `kind delete cluster --name mylab99` |
+| Octant | dari root repo: `kill "$(cat kubernetes/apps/1_visualizer/octant.pid)"` atau `pkill -f './octant'` |
+| Compose (Modul 5) | di folder case: `docker compose down` |
+| Container Docker (Modul 3/4) | `docker ps` lalu `docker stop …` / `docker rm …` |
+| Apache host di `:80` | `sudo systemctl stop apache2` (bukan bagian lab; opsional) |
+| VM Modul 1 | di guest: `sudo poweroff`; di host: `sudo ./15-cleanup-network.sh` |
