@@ -1,15 +1,18 @@
 # App Sample
 
-This creates and deploys a small Flask/Gunicorn application into an existing kind cluster.
+Deploy a small Flask/Gunicorn app into the lab kind cluster (`mylab99`).
 
 Default assumptions:
 
-- kind cluster name: `kind`
+- kind cluster name: `mylab99` (override with `KIND_CLUSTER`)
 - application namespace: `cloud-exp`
 - application image: `experiment-app:v1`
 - Ingress class: `nginx`
+- Host IP for sslip.io (same as Prometheus script): `10.28.84.254`
 - application endpoint: `http://experiment.10.28.84.254.sslip.io`
 - Prometheus endpoint: `http://prometheus.10.28.84.254.sslip.io`
+
+If your host IP differs, edit the Ingress host in `k8s/deployment.yaml` and set `APP_HOST` / `PROM_HOST` / `HOST_IP` accordingly. Prometheus must already be installed (`setup-cluster/kind/5-install-prometheus.sh`).
 
 ## Contents
 
@@ -17,10 +20,10 @@ Default assumptions:
 kind get clusters
 ```
 
-If the cluster name is not `kind`, set it before running the scripts:
+Override cluster name if needed:
 
 ```sh
-export KIND_CLUSTER=my-cluster
+export KIND_CLUSTER=mylab99
 ```
 
 ## Build and load the image into kind
@@ -63,7 +66,7 @@ curl http://experiment.10.28.84.254.sslip.io/cpu
 curl http://experiment.10.28.84.254.sslip.io/sleep
 ```
 
-## 6. Generate a small manual load
+## Generate a small manual load
 
 ```sh
 ./scripts/manual-load.sh
@@ -75,18 +78,24 @@ Change the number of concurrent requests:
 REQUESTS=50 ./scripts/manual-load.sh
 ```
 
-## 7. Verify Prometheus sees the application
+## Verify Prometheus sees the application
 
 CPU:
 
 ```sh
-curl -sG       'http://prometheus.10.28.84.254.sslip.io/api/v1/query'       --data-urlencode       'query=sum(rate(container_cpu_usage_seconds_total{namespace="cloud-exp",container="app"}[1m]))'
+curl -sG \
+  'http://prometheus.10.28.84.254.sslip.io/api/v1/query' \
+  --data-urlencode \
+  'query=sum(rate(container_cpu_usage_seconds_total{namespace="cloud-exp",container="app"}[1m]))'
 ```
 
 Memory:
 
 ```sh
-curl -sG       'http://prometheus.10.28.84.254.sslip.io/api/v1/query'       --data-urlencode       'query=container_memory_working_set_bytes{namespace="cloud-exp",container="app"}'
+curl -sG \
+  'http://prometheus.10.28.84.254.sslip.io/api/v1/query' \
+  --data-urlencode \
+  'query=container_memory_working_set_bytes{namespace="cloud-exp",container="app"}'
 ```
 
 ## One-command setup
@@ -99,21 +108,9 @@ If all prerequisites are already available:
 
 ## Override defaults
 
-Different kind cluster:
-
 ```sh
-KIND_CLUSTER=cloud ./scripts/build-load.sh
-```
-
-Different image:
-
-```sh
+KIND_CLUSTER=mylab99 ./scripts/build-load.sh
 IMAGE=experiment-app:v2 ./scripts/build-load.sh
-```
-
-Different application URL:
-
-```sh
 APP_HOST=http://other-host.example ./scripts/verify.sh
 ```
 

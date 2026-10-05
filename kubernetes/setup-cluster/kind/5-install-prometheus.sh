@@ -5,7 +5,7 @@ set -eu
 NAMESPACE="monitoring"
 RELEASE="monitoring"
 
-HOST_IP="10.28.84.254"
+HOST_IP="${HOST_IP:-10.28.84.254}"
 INGRESS_CLASS="nginx"
 
 PROM_HOST="prometheus.${HOST_IP}.sslip.io"

@@ -1,10 +1,13 @@
 # Workload Experiments
 
-assumes:
-- a running kind cluster,
+Assumes:
+
+- a running kind cluster named `mylab99` (from Modul 6),
 - ingress-nginx is already installed,
-- Prometheus is reachable at `http://prometheus.10.28.84.254.sslip.io`,
+- Prometheus is reachable at `http://prometheus.10.28.84.254.sslip.io` (or your `HOST_IP`),
 - the experiment application is reachable at `http://experiment.10.28.84.254.sslip.io`.
+
+Prefer deploying the app via `../app-sample` (`build-load.sh` + `deploy.sh`). The manifest here (`k8s/experiment-app.yaml`) is an alternate copy with the same Ingress host.
 
 ## 1. Install local Python dependencies
 
@@ -22,7 +25,7 @@ Create the namespace if needed:
 kubectl create namespace cloud-exp --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-Build/load your app image as `cloud-exp-app:v1`, then:
+Build/load the image as `experiment-app:v1` into `mylab99`, then:
 
 ```sh
 kubectl apply -f k8s/experiment-app.yaml
@@ -71,6 +74,7 @@ data/processed/<run_id>.csv
 ```
 
 Typical columns include:
+
 - timestamp
 - run_id
 - workload_level

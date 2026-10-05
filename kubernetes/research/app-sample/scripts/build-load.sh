@@ -2,7 +2,7 @@
 set -eu
 
 IMAGE="${IMAGE:-experiment-app:v1}"
-KIND_CLUSTER="${KIND_CLUSTER:-kind}"
+KIND_CLUSTER="${KIND_CLUSTER:-mylab99}"
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 BASE_DIR=$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)

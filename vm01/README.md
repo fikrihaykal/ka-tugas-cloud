@@ -32,8 +32,10 @@ Linux virtualization host
 The expected reusable image is:
 
 ```text
-~/minicloud-lab/images/alpine-base.qcow2
+./lab/images/alpine-base.qcow2
 ```
+
+(`LAB_ROOT` default di `00-config.sh` = `$PWD/lab`. Override dengan `export LAB_ROOT=...` bila perlu.)
 
 The intended build path is HashiCorp Packer + QEMU.
 
@@ -241,7 +243,13 @@ output-alpine/alpine-base.qcow2
 Copy that image to:
 
 ```text
-~/minicloud-lab/images/alpine-base.qcow2
+./lab/images/alpine-base.qcow2
 ```
 
-before running `03-create-vm-overlays.sh`.
+(atau set `LAB_ROOT` / `IMAGES_DIR`) before running `03-create-vm-overlays.sh`.
+
+Quick boot check without bridge networking:
+
+```bash
+./run-simple.sh
+```

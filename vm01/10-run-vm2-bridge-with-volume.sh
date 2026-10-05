@@ -30,5 +30,5 @@ exec "$QEMU_BIN" \
   -drive "file=$VM2_IMAGE,format=qcow2,if=virtio" \
   -drive "file=$VOLUME1_IMAGE,format=qcow2,if=virtio" \
   -netdev "tap,id=net0,ifname=$TAP2,script=no,downscript=no" \
-  -device virtio-net-pci,netdev=net0,mac=52:54:00:10:00:12 \
+  -device virtio-net-pci,netdev=net0 \
   -nographic

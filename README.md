@@ -15,7 +15,7 @@ Praktikum infrastruktur cloud pada host Linux x86_64.
 | **3. Docker** | `containers/docker/` | Proses Alpine, web Python, MySQL + phpMyAdmin |
 | **4. Image** | `containers/compose/images/` | Build dan jalankan image custom (Apache, noVNC, Nginx) |
 | **5. Compose** | `containers/compose/compose/` | Stack multi-container (Nginx, TLS, WordPress, app+MySQL) |
-| **6. Kubernetes** | `kubernetes/` | Cluster kind, ingress, Octant, workload contoh |
+| **6. Kubernetes** | `kubernetes/` | Cluster kind, ingress, Prometheus/Grafana, Octant, workload + research |
 
 ## Cara menjalankan
 
@@ -48,6 +48,10 @@ Comment di dalam blok = **satu kelompok perintah** (bukan per baris). Ada 1 bari
 │       ├── images/       Modul 4 — image custom
 │       └── compose/      Modul 5 — Compose
 └── kubernetes/           Modul 6 — Kubernetes
+    ├── bin/              kind, kubectl, helm
+    ├── setup-cluster/    kind cluster, ingress, Prometheus
+    ├── apps/             Octant + case workload
+    └── research/         app-sample + eksperimen Locust
 ```
 
 ---
@@ -146,13 +150,21 @@ Checksum yang diharapkan: `f4dd613206676c62949144c8ad75fc64582099f444dd1485bae10
 Build (lama). Tanpa KVM pakai TCG:
 
 ```bash
-# HOST — build image dasar Packer, salin ke lokasi lab
+# HOST — build image dasar Packer, salin ke lokasi lab (default LAB_ROOT=$PWD/lab)
 packer build -var accelerator=tcg packer/alpine-qemu.json
-mkdir -p "$HOME/minicloud-lab/images"
-cp output-alpine/alpine-base.qcow2 "$HOME/minicloud-lab/images/alpine-base.qcow2"
+mkdir -p lab/images
+cp output-alpine/alpine-base.qcow2 lab/images/alpine-base.qcow2
 ```
 
 Kalau KVM tersedia: `-var accelerator=kvm`.
+
+Cek boot image tanpa bridge (opsional, skrip cepat dosen):
+
+```bash
+# HOST — boot langsung image dasar (butuh lab/images/alpine-base.qcow2)
+cd vm01
+./run-simple.sh
+```
 
 ![Alur build image dasar dengan Packer](docs/images/packer-build.png)
 
@@ -691,13 +703,20 @@ docker compose down
 
 ## Modul 6 — Kubernetes
 
-**Tujuan modul:** cluster lokal dengan kind, ingress, dashboard Octant, dan workload contoh.
+**Tujuan modul:** cluster lokal dengan kind, ingress-nginx, Prometheus/Grafana (Helm), dashboard Octant, workload contoh, dan folder research (app-sample + eksperimen Locust).
 
 **Syarat:** Modul 1 (VM) sudah dimatikan. Port **80** dan **443** kosong (Modul 5 sudah `down`).
 
-Cluster `mylab99`: 1 control-plane, 2 worker. API host **16443**. Ingress **80**, **443**, **30080**, **30443**.
+Cluster `mylab99`: **1 control-plane + 3 worker**. API host **16443**. Ingress **80**, **443**, **30080**, **30443**.
 
-`download.sh` mengambil kind **v0.33.0**, kubectl **v1.28.13**, dan Helm **v4.3.0**. Cluster di-pin ke **Kubernetes 1.28.13** (`cluster-config.yaml`) karena manifest ingress-nginx **v1.9.4** butuh Kubernetes 1.25–1.28 (default node kind v0.33 = 1.37).
+`download.sh` mengambil:
+- kind **v0.33.0**
+- kubectl **v1.28.13**
+- Helm **v4.3.0**
+
+Cluster di-pin ke **Kubernetes 1.28.13** di `cluster-config.yaml` karena manifest ingress-nginx **v1.9.4** butuh Kubernetes **1.25–1.28** (default node kind v0.33 = 1.37).
+
+Host IP lab untuk Ingress research/Prometheus (sslip.io) default **`10.28.84.254`**. Override: `HOST_IP=<ip-kamu>`.
 
 Semua perintah di host.
 
@@ -708,16 +727,18 @@ Semua perintah di host.
 | kind node | Container Docker yang berperan sebagai “node” Kubernetes |
 | control-plane | Node master (API server, scheduler, dll.) |
 | worker | Node tempat pod aplikasi jalan |
-| ingress-nginx | Proxy HTTP/HTTPS masuk ke service |
+| ingress-nginx | Proxy HTTP/HTTPS masuk ke service (+ metrics) |
+| Helm | Package manager chart (Prometheus stack) |
+| Prometheus / Grafana | Metrik cluster + dashboard |
 | Octant | Dashboard web untuk melihat cluster |
 
 ### 6.1 Alat, cluster, ingress
 
-**Maksud:** unduh `kind`/`kubectl`, buat cluster, pasang ingress controller.  
-**Tujuan:** tiga node Ready dan ingress siap menerima trafik di 80/443.
+**Maksud:** unduh `kind` / `kubectl` / `helm`, buat cluster, pasang ingress controller.  
+**Tujuan:** empat node Ready (1 CP + 3 worker) dan ingress siap di 80/443.
 
 ```bash
-# HOST — unduh kind/kubectl + set PATH
+# HOST — unduh kind/kubectl/helm + set PATH
 cd kubernetes/bin
 sh download.sh
 source set.sh
@@ -732,6 +753,8 @@ sh 4-cek-ingress.sh
 kubectl get nodes
 ```
 
+`1-create-cluster.sh` menaikkan `fs.inotify.max_user_*` (butuh `sudo`) supaya banyak pod/file-watch tidak gagal.
+
 `export` di dalam `sh 2-set-config.sh` tidak masuk ke shell pemanggil. Terminal lain perlu:
 
 ```bash
@@ -742,7 +765,31 @@ export PATH="/path/ke/kubernetes/bin:$PATH"
 
 `4-cek-ingress.sh` menunggu controller paling lama 90 detik. Ulangi bila pod belum Ready.
 
-### 6.2 Octant
+### 6.2 Prometheus + Grafana (Helm)
+
+**Maksud:** pasang `kube-prometheus-stack` lewat Helm + Ingress sslip.io + ServiceMonitor untuk ingress-nginx.  
+**Tujuan:** `http://prometheus.<HOST_IP>.sslip.io` dan Grafana reachable.
+
+```bash
+# HOST — pastikan PATH punya helm + KUBECONFIG sudah di-set
+cd kubernetes/setup-cluster/kind
+# ganti IP bila bukan di lab kampus:
+#   HOST_IP=$(hostname -I | awk '{print $1}')
+HOST_IP="${HOST_IP:-10.28.84.254}" sh 5-install-prometheus.sh
+```
+
+Cek:
+
+```bash
+# HOST — kesehatan Prometheus + password Grafana
+curl -s "http://prometheus.${HOST_IP:-10.28.84.254}.sslip.io/-/healthy"
+kubectl get secret monitoring-grafana -n monitoring \
+  -o jsonpath='{.data.admin-password}' | base64 -d; echo
+```
+
+DNS sslip.io butuh host bisa resolve `*.<IP>.sslip.io` ke IP itu (biasanya otomatis di internet).
+
+### 6.3 Octant
 
 **Maksud:** menjalankan UI visualisasi cluster.  
 **Tujuan:** buka `http://127.0.0.1:22222` dan melihat resource.
@@ -761,7 +808,7 @@ PID proses ada di `octant.pid`.
 ### Case 1 — ingress HTTP
 
 **Maksud:** beberapa service di belakang satu ingress HTTP.  
-**Tujuan:** path `/foo`, `/bar4`, `/counter`, `/coba`, `/web1`, `/web2` menjawab 200.
+**Tujuan:** path `/foo`, `/bar4`, `/counter`, `/coba` menjawab 200.
 
 ```bash
 # HOST — deploy workload case 1
@@ -774,8 +821,6 @@ curl -s -o /dev/null -w 'foo %{http_code}\n' http://127.0.0.1/foo/
 curl -s -o /dev/null -w 'bar4 %{http_code}\n' http://127.0.0.1/bar4/
 curl -s -o /dev/null -w 'counter %{http_code}\n' http://127.0.0.1/counter/
 curl -s -o /dev/null -w 'coba %{http_code}\n' http://127.0.0.1/coba/
-curl -s -o /dev/null -w 'web1 %{http_code}\n' http://127.0.0.1/web1/
-curl -s -o /dev/null -w 'web2 %{http_code}\n' http://127.0.0.1/web2/
 ```
 
 | Path | Service |
@@ -784,18 +829,26 @@ curl -s -o /dev/null -w 'web2 %{http_code}\n' http://127.0.0.1/web2/
 | `/bar4` | `bar-service:8080` |
 | `/counter` | `counter-service:8888` |
 | `/coba` | `coba-service:80` |
-| `/web1` | `web1-service:80` (Deployment nginx, 10 replika) |
-| `/web2` | `web2-service:80` (StatefulSet nginx, 5 replika) |
+
+Opsional (Deployment/StatefulSet nginx, **tidak** ikut `run.sh`):
+
+```bash
+# HOST — apply terpisah bila perlu path /web1 dan /web2
+kubectl apply -f web1.yaml -f web2.yaml
+curl -s -o /dev/null -w 'web1 %{http_code}\n' http://127.0.0.1/web1/
+curl -s -o /dev/null -w 'web2 %{http_code}\n' http://127.0.0.1/web2/
+```
 
 ![Ingress case 1](docs/images/ingress-case1.png)
 
 Ingress case 1 dan case 2 sama-sama bernama `case1-ingress`. Hapus case 1 sebelum case 2:
 
 ```bash
-# HOST — hapus semua resource case 1 sebelum case 2
+# HOST — hapus resource case 1 sebelum case 2
 kubectl delete \
   -f foo.yaml -f bar.yaml -f coba.yaml -f counter.yaml \
-  -f web1.yaml -f web2.yaml -f ingress.yaml
+  -f ingress.yaml
+# plus web1.yaml web2.yaml bila sempat di-apply
 ```
 
 ### Case 2 — ingress HTTPS + image privat
@@ -829,6 +882,34 @@ cd kubernetes/apps/4_case3
 sh run.sh
 kubectl logs counter --tail=5
 ```
+
+### Research — app-sample + eksperimen
+
+**Maksud:** aplikasi Flask/Gunicorn + load Locust + export metrik Prometheus (folder dari update dosen).  
+**Tujuan:** endpoint `/`, `/cpu`, `/sleep`, `/health` terukur; dataset `data/processed/<run_id>.csv`.
+
+Prasyarat: cluster + ingress + Prometheus (6.1–6.2) sudah jalan. Sesuaikan host Ingress bila IP beda (edit `k8s/deployment.yaml` / set `APP_HOST`/`PROM_HOST`/`HOST_IP`).
+
+```bash
+# HOST — build image, load ke kind mylab99, deploy
+cd kubernetes/research/app-sample
+./scripts/install-all.sh
+# atau langkah terpisah:
+#   ./scripts/build-load.sh
+#   ./scripts/deploy.sh
+#   ./scripts/verify.sh
+
+# HOST — eksperimen Locust (venv + dependencies dulu)
+cd ../experiments
+python3 -m venv venv
+. venv/bin/activate
+pip install -r requirements.txt
+./scripts/run-experiment.sh run01 10
+```
+
+Detail lengkap: `kubernetes/research/app-sample/README.md` dan `kubernetes/research/experiments/README.md`.
+
+Default cluster name di script: **`mylab99`** (`KIND_CLUSTER`).
 
 ### Selesai Modul 6 — matikan
 
