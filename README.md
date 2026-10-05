@@ -697,7 +697,7 @@ docker compose down
 
 Cluster `mylab99`: 1 control-plane, 2 worker. API host **16443**. Ingress **80**, **443**, **30080**, **30443**.
 
-`download.sh` mengambil kind **v0.20.0** (Kubernetes 1.27) dan kubectl **v1.27.16**. Manifest ingress di repo butuh Kubernetes 1.25–1.28.
+`download.sh` mengambil kind **v0.33.0**, kubectl **v1.28.13**, dan Helm **v4.3.0**. Cluster di-pin ke **Kubernetes 1.28.13** (`cluster-config.yaml`) karena manifest ingress-nginx **v1.9.4** butuh Kubernetes 1.25–1.28 (default node kind v0.33 = 1.37).
 
 Semua perintah di host.
 

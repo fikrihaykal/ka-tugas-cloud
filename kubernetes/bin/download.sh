@@ -3,10 +3,12 @@
 #chmod a+x ./rke
 #https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64
 
-curl -Lo ./kind  https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64
+# kind v0.33.0 defaults to Kubernetes 1.37; vendored ingress-nginx v1.9.4 needs 1.25–1.28.
+# cluster-config.yaml pins kindest/node v1.28.13 so the controller can become Ready.
+curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64
 chmod a+x ./kind
 
-curl -Lo ./kubectl https://dl.k8s.io/release/v1.27.16/bin/linux/amd64/kubectl
+curl -Lo ./kubectl https://dl.k8s.io/release/v1.28.13/bin/linux/amd64/kubectl
 chmod a+x ./kubectl
 
 
