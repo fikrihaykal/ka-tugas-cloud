@@ -1,0 +1,2 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+GET,/cpu,HTTPError('503 Server Error: Service Temporarily Unavailable for url: /cpu'),1136,2026-10-05T13:56:28Z,2026-10-05T13:56:32Z

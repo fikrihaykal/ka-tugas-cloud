@@ -484,19 +484,12 @@ MySQL harus sudah jalan sebelum phpMyAdmin. Login di `http://127.0.0.1:10000/`:
 
 ### Selesai Modul 3 — matikan
 
-**Maksud:** pastikan tidak ada container modul ini yang masih memegang port.  
+**Maksud:** pastikan tidak ada sisa container modul ini yang masih memegang port (tiap case sudah punya stop/rm sendiri).  
 **Tujuan:** host bersih sebelum Modul 4/5.
 
-Urutan: **stop** dulu (lepaskan port), baru **rm** (hapus container). Abaikan error kalau sudah tidak ada.
-
 ```bash
-# HOST — 1) matikan semua container modul ini
-docker stop myprocess1 webserver1 phpmyadmin1 mysql1 2>/dev/null || true
-
-# HOST — 2) hapus container
+# HOST — sapu sisa (abaikan yang sudah tidak ada) + cek port
 docker rm -f myprocess1 webserver1 phpmyadmin1 mysql1 2>/dev/null || true
-
-# HOST — 3) cek port kosong
 ss -ltn | grep -E ':9999|:10000' || echo "port 9999/10000 bebas"
 ```
 
@@ -596,19 +589,12 @@ docker rm -f webserver2
 
 ### Selesai Modul 4 — matikan
 
-**Maksud:** hapus container image custom yang masih jalan.  
-**Tujuan:** port **9999** / **11111** / **12111** kosong.
-
-Urutan: **stop** → **rm**. Image (`mywebserver:1.0`, `mylinux:1.0`, …) boleh tetap di host.
+**Maksud:** pastikan tidak ada sisa container image custom (tiap case sudah punya stop/rm sendiri).  
+**Tujuan:** port **9999** / **11111** / **12111** kosong. Image boleh tetap di host.
 
 ```bash
-# HOST — 1) matikan
-docker stop mywebserver mylinux webserver2 2>/dev/null || true
-
-# HOST — 2) hapus container
+# HOST — sapu sisa + cek port
 docker rm -f mywebserver mylinux webserver2 2>/dev/null || true
-
-# HOST — 3) cek port kosong
 ss -ltn | grep -E ':9999|:11111|:12111' || echo "port 9999/11111/12111 bebas"
 ```
 
@@ -729,36 +715,15 @@ docker compose down
 
 ### Selesai Modul 5 — matikan
 
-**Maksud:** semua stack Compose sudah dimatikan/dihapus.  
+**Maksud:** pastikan semua stack Compose sudah `down` di folder case masing-masing (sudah ada di tiap case).  
 **Tujuan:** port **80**, **443**, **9999**, **10000**, **30081**, **34001** kosong sebelum Modul 6.
 
-Urutan per stack: `down` di folder case yang sempat dijalankan (dari example → case4).  
-`down` = stop + hapus container + network. Volume `dbdata/` / `wp_vol/` tetap (pakai `down -v` hanya kalau mau hapus data juga).
-
 ```bash
-# HOST — 1) example
-cd containers/compose/compose/example
-docker compose down
-
-# HOST — 2) case1
-cd ../case1
-docker compose down
-
-# HOST — 3) case2 (lepas 80/443)
-cd ../case2
-docker compose down
-
-# HOST — 4) case3
-cd ../case3
-docker compose down
-
-# HOST — 5) case4
-cd ../case4
-docker compose down
-
-# HOST — 6) cek port kritis Modul 6 sudah bebas
+# HOST — cek port kritis Modul 6 sudah bebas
 ss -ltn | grep -E ':80 |:443 |:9999|:10000|:30081|:34001' || echo "port Compose bebas"
 ```
+
+Kalau masih ketahan, `cd` ke folder case yang sempat jalan lalu `docker compose down` (lihat bagian case itu).
 
 ---
 
@@ -966,9 +931,9 @@ kubectl delete -f counter.yaml
 ### Research — app-sample + eksperimen
 
 **Maksud:** aplikasi Flask/Gunicorn + load Locust + export metrik Prometheus (folder dari update dosen).  
-**Tujuan:** endpoint `/`, `/cpu`, `/sleep`, `/health` terukur; dataset `data/processed/<run_id>.csv`.
+**Tujuan:** endpoint `/`, `/cpu`, `/sleep`, `/health` terukur; dataset `data/processed/<run_id>.csv`; jawab hubungan Workload ↔ Resource ↔ Performance.
 
-Prasyarat: cluster + ingress + Prometheus (6.1–6.2) sudah jalan. Sesuaikan host Ingress bila IP beda (edit `k8s/deployment.yaml` / set `APP_HOST`/`PROM_HOST`/`HOST_IP`).
+Prasyarat: cluster + ingress + Prometheus (6.1–6.2) sudah jalan. Case 1–3 sebaiknya sudah dihapus supaya Ingress/host tidak bentrok. Sesuaikan host Ingress bila IP beda (edit `k8s/deployment.yaml` / set `APP_HOST`/`PROM_HOST`/`HOST_IP`).
 
 ```bash
 # HOST — build image, load ke kind mylab99, deploy
@@ -986,6 +951,33 @@ python3 -m venv venv
 pip install -r requirements.txt
 ./scripts/run-experiment.sh run01 10
 ```
+
+#### Menu percobaan (ringkas)
+
+Detail + perintah per menu: `kubernetes/research/experiments/README.md` (Menu A–G).
+
+| Menu | Skenario | Yang diubah | Yang diamati |
+|---|---|---|---|
+| **A** (wajib dulu) | Workload sweep di `/cpu` | users `10→20→40→80` | CPU/mem, RPS, latency p95/p99, failure |
+| **B** | Titik jenuh | users naik terus | failure_rate, pod restart, ready_replicas |
+| **C** | Scale horizontal | replicas `1/2/3`, users tetap | RPS/latency vs jumlah pod |
+| **D** | Limit CPU vertikal | `limits.cpu`, users tetap | throttle CPU vs latency |
+| **E** | Karakter endpoint | path `/cpu` vs `/sleep` vs `/` | CPU tinggi vs latency antri |
+| **F** | Sensitivitas durasi | `MEASUREMENT_SECONDS` | stabilitas metrik (metode) |
+| **G** | Smoke | `manual-load.sh` / `verify.sh` | cek hidup sebelum run panjang |
+
+**Rekomendasi laporan Modul 6:** kerjakan **A**, plus **satu** dari **C** atau **D**. Jangan kerjakan semua menu dalam satu sesi (tiap run penuh ≈ warmup + 5 menit ukur + cooldown).
+
+**Pantau selama/ setelah load:**
+
+| Lapisan | Alat | Contoh sinyal |
+|---|---|---|
+| Performa klien | Locust CSV | `throughput_rps`, `latency_p50/p95/p99`, `failure_rate` |
+| Resource pod | Prometheus / Grafana | `cpu_cores`, `memory_bytes`, network rx/tx |
+| Kapasitas | Prometheus + `kubectl` | `replicas`, `ready_replicas`, Restarts |
+| Visual | Octant / Grafana | event pod, chart CPU/mem live |
+
+Konstanta yang **tidak** boleh berubah antar run kecuali knobs skenario itu: image tag, warmup, durasi ukur, spawn rate, resource limit, jumlah replica.
 
 Detail lengkap: `kubernetes/research/app-sample/README.md` dan `kubernetes/research/experiments/README.md`.
 
@@ -1005,11 +997,11 @@ kubectl delete namespace cloud-exp --ignore-not-found
 
 ### Selesai Modul 6 — matikan
 
-**Maksud:** membongkar stack Kubernetes dari luar ke dalam (workload → UI → monitoring → ingress → cluster).  
-**Tujuan:** host kembali bersih; node kind dan port 80/443/16443 hilang.
+**Maksud:** membongkar infrastruktur cluster (bukan workload case — itu sudah di bagian case/research masing-masing).  
+**Tujuan:** Octant mati, monitoring/ingress dibersihkan, cluster kind hilang; port 80/443/16443/22222 bebas.
 
-Pastikan `PATH` punya `kind`/`kubectl`/`helm` dan `KUBECONFIG` mengarah ke kubeconfig cluster (lihat 6.1).  
-Lewati langkah yang memang belum pernah dijalankan.
+Pastikan tiap case + research sudah dihapus di tempatnya.  
+`PATH` punya `kind`/`kubectl`/`helm`; `KUBECONFIG` mengarah ke kubeconfig cluster (lihat 6.1).
 
 ```bash
 # HOST — env (sesuaikan path)
@@ -1017,48 +1009,7 @@ export PATH="/path/ke/kubernetes/bin:$PATH"
 export KUBECONFIG=/path/ke/kubernetes/setup-cluster/kind/kubeconfig
 ```
 
-**1) Research** (bila belum dihapus di atas)
-
-```bash
-# HOST — keluar venv + hapus app-sample
-deactivate 2>/dev/null || true
-cd kubernetes/research/app-sample
-kubectl delete --ignore-not-found -f k8s/deployment.yaml
-kubectl delete namespace cloud-exp --ignore-not-found
-```
-
-**2) Case 3**
-
-```bash
-# HOST — hapus counter
-cd kubernetes/apps/4_case3
-kubectl delete --ignore-not-found -f counter.yaml
-```
-
-**3) Case 2**
-
-```bash
-# HOST — hapus ingress TLS + workload + secret
-cd kubernetes/apps/3_case2
-kubectl delete --ignore-not-found \
-  -f docker-secret.yaml -f tls-secret.yaml \
-  -f foo.yaml -f bar.yaml -f coba.yaml -f coba2.yaml \
-  -f ingress.yaml
-```
-
-**4) Case 1** (biasanya sudah dihapus sebelum case 2)
-
-```bash
-# HOST — hapus sisa case 1 bila masih ada
-cd kubernetes/apps/2_case1
-kubectl delete --ignore-not-found \
-  -f foo.yaml -f bar.yaml -f coba.yaml -f counter.yaml \
-  -f ingress.yaml
-# plus web1.yaml web2.yaml bila sempat di-apply:
-# kubectl delete --ignore-not-found -f web1.yaml -f web2.yaml
-```
-
-**5) Octant**
+**1) Octant**
 
 ```bash
 # HOST — hentikan dashboard (port 22222)
@@ -1066,7 +1017,7 @@ kill "$(cat kubernetes/apps/1_visualizer/octant.pid)" 2>/dev/null || true
 rm -f kubernetes/apps/1_visualizer/octant.pid
 ```
 
-**6) Prometheus + Grafana (Helm)**
+**2) Prometheus + Grafana (Helm)**
 
 ```bash
 # HOST — cabut Ingress monitoring, uninstall chart, hapus namespace
@@ -1077,7 +1028,7 @@ helm uninstall monitoring -n monitoring
 kubectl delete namespace monitoring --ignore-not-found
 ```
 
-**7) Ingress controller** (opsional — ikut hilang saat cluster dihapus)
+**3) Ingress controller** (opsional — ikut hilang saat cluster dihapus)
 
 ```bash
 # HOST — cabut ingress-nginx dari cluster
@@ -1085,7 +1036,7 @@ cd kubernetes/setup-cluster/kind
 kubectl delete --ignore-not-found -f nginx-ingress.yaml
 ```
 
-**8) Hapus cluster kind** (langkah terakhir)
+**4) Hapus cluster kind** (langkah terakhir)
 
 ```bash
 # HOST — hapus semua node kind mylab99
