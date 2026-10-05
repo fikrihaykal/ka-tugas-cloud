@@ -4,8 +4,8 @@ Assumes:
 
 - a running kind cluster named `mylab99` (from Modul 6),
 - ingress-nginx is already installed,
-- Prometheus is reachable at `http://prometheus.10.28.84.254.sslip.io` (or your `HOST_IP`),
-- the experiment application is reachable at `http://experiment.10.28.84.254.sslip.io`.
+- Prometheus is reachable at `http://prometheus.127.0.0.1.sslip.io` (or your `HOST_IP`),
+- the experiment application is reachable at `http://experiment.127.0.0.1.sslip.io`.
 
 Prefer deploying the app via `../app-sample` (`build-load.sh` + `deploy.sh`). The manifest here (`k8s/experiment-app.yaml`) is an alternate copy with the same Ingress host.
 
@@ -30,14 +30,14 @@ Build/load the image as `experiment-app:v1` into `mylab99`, then:
 ```sh
 kubectl apply -f k8s/experiment-app.yaml
 kubectl get pods -n cloud-exp
-curl http://experiment.10.28.84.254.sslip.io/
+curl http://experiment.127.0.0.1.sslip.io/
 ```
 
 ## 3. Verify Prometheus
 
 ```sh
-curl http://prometheus.10.28.84.254.sslip.io/-/healthy
-curl -sG 'http://prometheus.10.28.84.254.sslip.io/api/v1/query' \
+curl http://prometheus.127.0.0.1.sslip.io/-/healthy
+curl -sG 'http://prometheus.127.0.0.1.sslip.io/api/v1/query' \
   --data-urlencode 'query=up'
 ```
 
@@ -53,8 +53,8 @@ curl -sG 'http://prometheus.10.28.84.254.sslip.io/api/v1/query' \
 Environment variables can override defaults:
 
 ```sh
-APP_HOST=http://experiment.10.28.84.254.sslip.io \
-PROM_HOST=http://prometheus.10.28.84.254.sslip.io \
+APP_HOST=http://experiment.127.0.0.1.sslip.io \
+PROM_HOST=http://prometheus.127.0.0.1.sslip.io \
 MEASUREMENT_SECONDS=300 \
 ./scripts/run-experiment.sh run05 100
 ```

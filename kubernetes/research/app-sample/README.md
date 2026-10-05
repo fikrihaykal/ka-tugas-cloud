@@ -8,9 +8,9 @@ Default assumptions:
 - application namespace: `cloud-exp`
 - application image: `experiment-app:v1`
 - Ingress class: `nginx`
-- Host IP for sslip.io (same as Prometheus script): `10.28.84.254`
-- application endpoint: `http://experiment.10.28.84.254.sslip.io`
-- Prometheus endpoint: `http://prometheus.10.28.84.254.sslip.io`
+- Host IP for sslip.io (same as Prometheus script): `127.0.0.1`
+- application endpoint: `http://experiment.127.0.0.1.sslip.io`
+- Prometheus endpoint: `http://prometheus.127.0.0.1.sslip.io`
 
 If your host IP differs, edit the Ingress host in `k8s/deployment.yaml` and set `APP_HOST` / `PROM_HOST` / `HOST_IP` accordingly. Prometheus must already be installed (`setup-cluster/kind/5-install-prometheus.sh`).
 
@@ -60,10 +60,10 @@ This creates the `cloud-exp` namespace and deploys:
 Or test manually:
 
 ```sh
-curl http://experiment.10.28.84.254.sslip.io/
-curl http://experiment.10.28.84.254.sslip.io/health
-curl http://experiment.10.28.84.254.sslip.io/cpu
-curl http://experiment.10.28.84.254.sslip.io/sleep
+curl http://experiment.127.0.0.1.sslip.io/
+curl http://experiment.127.0.0.1.sslip.io/health
+curl http://experiment.127.0.0.1.sslip.io/cpu
+curl http://experiment.127.0.0.1.sslip.io/sleep
 ```
 
 ## Generate a small manual load
@@ -84,7 +84,7 @@ CPU:
 
 ```sh
 curl -sG \
-  'http://prometheus.10.28.84.254.sslip.io/api/v1/query' \
+  'http://prometheus.127.0.0.1.sslip.io/api/v1/query' \
   --data-urlencode \
   'query=sum(rate(container_cpu_usage_seconds_total{namespace="cloud-exp",container="app"}[1m]))'
 ```
@@ -93,7 +93,7 @@ Memory:
 
 ```sh
 curl -sG \
-  'http://prometheus.10.28.84.254.sslip.io/api/v1/query' \
+  'http://prometheus.127.0.0.1.sslip.io/api/v1/query' \
   --data-urlencode \
   'query=container_memory_working_set_bytes{namespace="cloud-exp",container="app"}'
 ```

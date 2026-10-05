@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-APP_HOST="${APP_HOST:-http://experiment.10.28.84.254.sslip.io}"
+APP_HOST="${APP_HOST:-http://experiment.127.0.0.1.sslip.io}"
 REQUESTS="${REQUESTS:-20}"
 
 i=1

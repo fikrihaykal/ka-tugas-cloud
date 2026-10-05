@@ -777,7 +777,7 @@ Cluster `mylab99`: **1 control-plane + 3 worker**. API host **16443**. Ingress *
 
 Cluster di-pin ke **Kubernetes 1.28.13** di `cluster-config.yaml` karena manifest ingress-nginx **v1.9.4** butuh Kubernetes **1.25–1.28** (default node kind v0.33 = 1.37).
 
-Host IP lab untuk Ingress research/Prometheus (sslip.io) default **`10.28.84.254`**. Override: `HOST_IP=<ip-kamu>`.
+Host IP lab untuk Ingress research/Prometheus (sslip.io) default **`127.0.0.1`**. Override: `HOST_IP=<ip-kamu>`.
 
 Semua perintah di host.
 
@@ -836,14 +836,14 @@ export PATH="/path/ke/kubernetes/bin:$PATH"
 cd kubernetes/setup-cluster/kind
 # ganti IP bila bukan di lab kampus:
 #   HOST_IP=$(hostname -I | awk '{print $1}')
-HOST_IP="${HOST_IP:-10.28.84.254}" sh 5-install-prometheus.sh
+HOST_IP="${HOST_IP:-127.0.0.1}" sh 5-install-prometheus.sh
 ```
 
 Cek:
 
 ```bash
 # HOST — kesehatan Prometheus + password Grafana
-curl -s "http://prometheus.${HOST_IP:-10.28.84.254}.sslip.io/-/healthy"
+curl -s "http://prometheus.${HOST_IP:-127.0.0.1}.sslip.io/-/healthy"
 kubectl get secret monitoring-grafana -n monitoring \
   -o jsonpath='{.data.admin-password}' | base64 -d; echo
 ```

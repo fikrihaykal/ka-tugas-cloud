@@ -60,7 +60,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: experiment.10.28.84.254.sslip.io
+  - host: experiment.127.0.0.1.sslip.io
     http:
       paths:
       - path: /

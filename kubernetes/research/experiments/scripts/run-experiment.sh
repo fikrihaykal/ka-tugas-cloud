@@ -10,8 +10,8 @@ if [ -z "$RUN_ID" ] || [ -z "$USERS" ]; then
   exit 1
 fi
 
-APP_HOST="${APP_HOST:-http://experiment.10.28.84.254.sslip.io}"
-PROM_HOST="${PROM_HOST:-http://prometheus.10.28.84.254.sslip.io}"
+APP_HOST="${APP_HOST:-http://experiment.127.0.0.1.sslip.io}"
+PROM_HOST="${PROM_HOST:-http://prometheus.127.0.0.1.sslip.io}"
 NAMESPACE="${NAMESPACE:-cloud-exp}"
 DEPLOYMENT="${DEPLOYMENT:-experiment-app}"
 WARMUP_SECONDS="${WARMUP_SECONDS:-60}"

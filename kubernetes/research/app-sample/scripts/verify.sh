@@ -1,11 +1,11 @@
 #!/bin/sh
 set -eu
 
-APP_HOST="${APP_HOST:-http://experiment.10.28.84.254.sslip.io}"
-PROM_HOST="${PROM_HOST:-http://prometheus.10.28.84.254.sslip.io}"
+APP_HOST="${APP_HOST:-http://experiment.127.0.0.1.sslip.io}"
+PROM_HOST="${PROM_HOST:-http://prometheus.127.0.0.1.sslip.io}"
 
 echo "=== DNS ==="
-getent hosts experiment.10.28.84.254.sslip.io || true
+getent hosts experiment.127.0.0.1.sslip.io || true
 
 echo
 echo "=== Application root ==="
