@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-LAB_ROOT="${LAB_ROOT:-$HOME/minicloud-lab}"
+LAB_ROOT="${LAB_ROOT:-$PWD/lab}"
 IMAGES_DIR="${IMAGES_DIR:-$LAB_ROOT/images}"
 INSTANCES_DIR="${INSTANCES_DIR:-$LAB_ROOT/instances}"
 STORAGE_DIR="${STORAGE_DIR:-$LAB_ROOT/storage}"

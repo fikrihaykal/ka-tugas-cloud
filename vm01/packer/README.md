@@ -75,8 +75,9 @@ output-alpine/alpine-base.qcow2
 Copy it into the workshop image directory:
 
 ```bash
+mkdir -p lab/images
 cp output-alpine/alpine-base.qcow2 \
-  ~/minicloud-lab/images/alpine-base.qcow2
+  lab/images/alpine-base.qcow2
 ```
 
 ## Without KVM
