@@ -8,9 +8,16 @@ menginstall cluster
 - cd setup-cluster/kind
 - edit cluster-config.yaml
 - jalankan script 1-create-cluster.sh untuk membuat cluster
-- jalankan script 2-set-config.sh untuk mendapatkan kubeconfig 
+- jalankan script 2-set-config.sh untuk mendapatkan kubeconfig
+- export KUBECONFIG ke kubeconfig cluster (export di dalam script tidak masuk ke shell pemanggil)
+- cd ../supporting
 - jalankan script 3-install-ingress.sh untuk memasang ingress (traffic controller dan reverse proxy)
 - jalankan script 4-cek-ingress.sh untuk melakukan checking pada setup ingress sebelumnya (butuh menunggu)
+- jalankan script 5-install-prometheus.sh untuk Prometheus/Grafana (opsional: 6 linkerd, 7 netobserv, 8 gadget, 9 otel)
+
+cluster k0s (terpisah dari kind, opsional)
+- cd setup-cluster/k0s-cluster
+- lihat README.md
 
 
 

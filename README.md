@@ -15,7 +15,7 @@ Praktikum infrastruktur cloud pada host Linux x86_64.
 | **3. Docker** | `containers/docker/` | Proses Alpine, web Python, MySQL + phpMyAdmin |
 | **4. Image** | `containers/compose/images/` | Build dan jalankan image custom (Apache, noVNC, Nginx) |
 | **5. Compose** | `containers/compose/compose/` | Stack multi-container (Nginx, TLS, WordPress, app+MySQL) |
-| **6. Kubernetes** | `kubernetes/` | Cluster kind, ingress, Prometheus/Grafana, Octant, workload + research |
+| **6. Kubernetes** | `kubernetes/` | Cluster kind, ingress, Prometheus/Grafana, Octant, workload + Cloud Dynamics |
 
 ## Cara menjalankan
 
@@ -48,10 +48,13 @@ Comment di dalam blok = **satu kelompok perintah** (bukan per baris). Ada 1 bari
 │       ├── images/       Modul 4 — image custom
 │       └── compose/      Modul 5 — Compose
 └── kubernetes/           Modul 6 — Kubernetes
-    ├── bin/              kind, kubectl, helm
-    ├── setup-cluster/    kind cluster, ingress, Prometheus
+    ├── bin/              kind, kubectl, helm, linkerd, k0s
+    ├── setup-cluster/
+    │   ├── kind/         cluster kind mylab99
+    │   ├── supporting/   ingress, Prometheus, Linkerd, observability
+    │   └── k0s-cluster/  cluster k0s (opsional, terpisah dari kind)
     ├── apps/             Octant + case workload
-    └── research/         app-sample + eksperimen Locust
+    └── research/         Cloud Dynamics (app, eksperimen, metrik, analisis)
 ```
 
 ---
@@ -729,7 +732,7 @@ Kalau masih ketahan, `cd` ke folder case yang sempat jalan lalu `docker compose 
 
 ## Modul 6 — Kubernetes
 
-**Tujuan modul:** cluster lokal dengan kind, ingress-nginx, Prometheus/Grafana (Helm), dashboard Octant, workload contoh, dan folder research (app-sample + eksperimen Locust).
+**Tujuan modul:** cluster lokal dengan kind, ingress-nginx, Prometheus/Grafana (Helm), dashboard Octant, workload contoh, dan research Cloud Dynamics (beberapa arsitektur aplikasi + beban terkontrol).
 
 **Syarat:** Modul 1 (VM) sudah dimatikan. Port **80** dan **443** kosong (Modul 5 sudah `down`).
 
@@ -739,6 +742,8 @@ Cluster `mylab99`: **1 control-plane + 3 worker**. API host **16443**. Ingress *
 - kind **v0.33.0**
 - kubectl **v1.28.13**
 - Helm **v4.3.0**
+- linkerd CLI **edge-26.9.3**
+- k0s **v1.36.4**
 
 Cluster di-pin ke **Kubernetes 1.28.13** di `cluster-config.yaml` karena manifest ingress-nginx **v1.9.4** butuh Kubernetes **1.25–1.28** (default node kind v0.33 = 1.37).
 
@@ -764,16 +769,19 @@ Semua perintah di host.
 **Tujuan:** empat node Ready (1 CP + 3 worker) dan ingress siap di 80/443.
 
 ```bash
-# HOST — unduh kind/kubectl/helm + set PATH
+# HOST — unduh kind/kubectl/helm/linkerd/k0s + set PATH
 cd kubernetes/bin
 sh download.sh
 source set.sh
 
-# HOST — buat cluster kind + pasang/cek ingress
+# HOST — buat cluster kind
 cd ../setup-cluster/kind
 sh 1-create-cluster.sh
 sh 2-set-config.sh
 export KUBECONFIG="$PWD/kubeconfig"
+
+# HOST — ingress ada di supporting/ (bukan lagi di folder kind)
+cd ../supporting
 sh 3-install-ingress.sh
 sh 4-cek-ingress.sh
 kubectl get nodes
@@ -798,8 +806,8 @@ export PATH="/path/ke/kubernetes/bin:$PATH"
 
 ```bash
 # HOST — pastikan PATH punya helm + KUBECONFIG sudah di-set
-cd kubernetes/setup-cluster/kind
-# ganti IP bila bukan di lab kampus:
+cd kubernetes/setup-cluster/supporting
+# ganti IP bila cluster tidak di localhost:
 #   HOST_IP=$(hostname -I | awk '{print $1}')
 HOST_IP="${HOST_IP:-127.0.0.1}" sh 5-install-prometheus.sh
 ```
@@ -813,7 +821,18 @@ kubectl get secret monitoring-grafana -n monitoring \
   -o jsonpath='{.data.admin-password}' | base64 -d; echo
 ```
 
-DNS sslip.io butuh host bisa resolve `*.<IP>.sslip.io` ke IP itu (biasanya otomatis di internet).
+DNS sslip.io butuh host bisa resolve `*.<IP>.sslip.io` ke IP itu (biasanya otomatis di internet). Ingress kind publish di host port **80** / **443** (`supporting/variables.sh`).
+
+Komponen di folder yang sama, **opsional** (bukan syarat case 1–3):
+
+| Script | Isi |
+|---|---|
+| `6-install-linkerd.sh` | Service mesh + viz (berguna untuk app `microservices`) |
+| `7-install-netobserv.sh` | Observabilitas jaringan |
+| `8-install-inspektor-gadget.sh` | Inspeksi eBPF |
+| `9-install-otel-collector.sh` | OpenTelemetry collector |
+
+`setup-cluster/k0s-cluster/` adalah cara lain membuat cluster (k0s di container, termasuk node GPU). Itu **bukan** pengganti `mylab99`. Alur modul ini tetap kind. Detail ada di `kubernetes/setup-cluster/k0s-cluster/README.md`.
 
 ### 6.3 Octant
 
@@ -928,71 +947,61 @@ cd kubernetes/apps/4_case3
 kubectl delete -f counter.yaml
 ```
 
-### Research — app-sample + eksperimen
+### Research — Cloud Dynamics
 
-**Maksud:** aplikasi Flask/Gunicorn + load Locust + export metrik Prometheus (folder dari update dosen).  
-**Tujuan:** endpoint `/`, `/cpu`, `/sleep`, `/health` terukur; dataset `data/processed/<run_id>.csv`; jawab hubungan Workload ↔ Resource ↔ Performance.
+**Maksud:** beberapa arsitektur aplikasi di-load dengan profil beban yang sama, lalu metrik Prometheus digabung ke `combined.csv`.
+**Tujuan:** satu aplikasi hidup di `http://<app>.127.0.0.1.sslip.io/`, satu run `constant` tersimpan, metrik terkumpul.
 
-Prasyarat: cluster + ingress + Prometheus (6.1–6.2) sudah jalan. Case 1–3 sebaiknya sudah dihapus supaya Ingress/host tidak bentrok. Sesuaikan host Ingress bila IP beda (edit `k8s/deployment.yaml` / set `APP_HOST`/`PROM_HOST`/`HOST_IP`).
+Empat folder, urutannya tetap:
+
+| Folder | Peran |
+|---|---|
+| `cloud-dynamics-applications` | Image + deploy (stateless, CPU, memory, DB, cache, microservices) |
+| `cloud-dynamics-experiments` | Generator beban (`constant`, `ramp`, `burst`, `periodic`, `variable`) |
+| `cloud-dynamics-metrics` | Tarik Prometheus untuk jendela ukur yang sama |
+| `cloud-dynamics-analysis-venv` | Jupyter / pandas atas `combined.csv` |
+
+Prasyarat: cluster + ingress + Prometheus (6.1–6.2) sudah jalan. Case 1–3 sebaiknya sudah dihapus supaya Ingress tidak bentrok. Default `HOST_IP=127.0.0.1` dan cluster **`mylab99`**. IP lain: `export HOST_IP=<ip>` sebelum script (nilai export menang atas file `config/*.env`).
 
 ```bash
-# HOST — build image, load ke kind mylab99, deploy
-cd kubernetes/research/app-sample
-./scripts/install-all.sh
-# atau langkah terpisah:
-#   ./scripts/build-load.sh
-#   ./scripts/deploy.sh
-#   ./scripts/verify.sh
+# HOST — build, load ke kind, deploy, smoke
+cd kubernetes/research/cloud-dynamics-applications
+./scripts/build-and-load.sh stateless-api
+./scripts/deploy.sh stateless-api
+./scripts/smoke-test.sh stateless-api
 
-# HOST — eksperimen Locust (venv + dependencies dulu)
-cd ../experiments
-python3 -m venv venv
-. venv/bin/activate
-pip install -r requirements.txt
-./scripts/run-experiment.sh run01 10
+# HOST — baseline dulu, jangan langsung run-all
+cd ../cloud-dynamics-experiments
+./scripts/check-environment.sh
+./scripts/run-experiment.sh scenarios/constant.env
+
+# HOST — ganti EXP dengan folder yang baru muncul di results/
+cd ../cloud-dynamics-metrics
+./scripts/check-prometheus.sh
+EXP=../cloud-dynamics-experiments/results/<experiment-id>
+./scripts/collect-experiment.sh "$EXP" stateless-api
 ```
 
-#### Menu percobaan (ringkas)
+Profil lain (setelah baseline valid): `scenarios/ramp.env`, `burst.env`, `periodic.env`, `variable.env`. Aplikasi lain: ulang build/deploy/smoke dengan nama `cpu-bound`, `memory-stateful`, `database-api`, `cache-api`, atau `microservices` (yang terakhir lebih masuk akal kalau Linkerd sudah terpasang).
 
-Detail + perintah per menu: `kubernetes/research/experiments/README.md` (Menu A–G).
+Analisis (opsional, butuh `python3-venv`):
 
-| Menu | Skenario | Yang diubah | Yang diamati |
-|---|---|---|---|
-| **A** (wajib dulu) | Workload sweep di `/cpu` | users `10→20→40→80` | CPU/mem, RPS, latency p95/p99, failure |
-| **B** | Titik jenuh | users naik terus | failure_rate, pod restart, ready_replicas |
-| **C** | Scale horizontal | replicas `1/2/3`, users tetap | RPS/latency vs jumlah pod |
-| **D** | Limit CPU vertikal | `limits.cpu`, users tetap | throttle CPU vs latency |
-| **E** | Karakter endpoint | path `/cpu` vs `/sleep` vs `/` | CPU tinggi vs latency antri |
-| **F** | Sensitivitas durasi | `MEASUREMENT_SECONDS` | stabilitas metrik (metode) |
-| **G** | Smoke | `manual-load.sh` / `verify.sh` | cek hidup sebelum run panjang |
+```bash
+# HOST — Jupyter di http://127.0.0.1:8888
+cd kubernetes/research/cloud-dynamics-analysis-venv
+./scripts/create-venv.sh
+./scripts/start-jupyter.sh
+```
 
-**Rekomendasi laporan Modul 6:** kerjakan **A**, plus **satu** dari **C** atau **D**. Jangan kerjakan semua menu dalam satu sesi (tiap run penuh ≈ warmup + 5 menit ukur + cooldown).
-
-**Pantau selama/ setelah load:**
-
-| Lapisan | Alat | Contoh sinyal |
-|---|---|---|
-| Performa klien | Locust CSV | `throughput_rps`, `latency_p50/p95/p99`, `failure_rate` |
-| Resource pod | Prometheus / Grafana | `cpu_cores`, `memory_bytes`, network rx/tx |
-| Kapasitas | Prometheus + `kubectl` | `replicas`, `ready_replicas`, Restarts |
-| Visual | Octant / Grafana | event pod, chart CPU/mem live |
-
-Konstanta yang **tidak** boleh berubah antar run kecuali knobs skenario itu: image tag, warmup, durasi ukur, spawn rate, resource limit, jumlah replica.
-
-Detail lengkap: `kubernetes/research/app-sample/README.md` dan `kubernetes/research/experiments/README.md`.
-
-Default cluster name di script: **`mylab99`** (`KIND_CLUSTER`).
+Detail: README di tiap folder Cloud Dynamics.
 
 Setelah eksperimen selesai, matikan workload research dulu (jangan langsung hapus cluster):
 
 ```bash
-# HOST — 1) keluar venv Locust bila masih aktif
-deactivate 2>/dev/null || true
-
-# HOST — 2) hapus Deployment/Service/Ingress app-sample + namespace
-cd kubernetes/research/app-sample
-kubectl delete -f k8s/deployment.yaml
-kubectl delete namespace cloud-exp --ignore-not-found
+# HOST — cabut app yang sempat di-deploy, lalu namespace
+cd kubernetes/research/cloud-dynamics-applications
+./scripts/remove.sh stateless-api
+kubectl delete namespace cloud-dynamics --ignore-not-found
 ```
 
 ### Selesai Modul 6 — matikan
@@ -1021,9 +1030,8 @@ rm -f kubernetes/apps/1_visualizer/octant.pid
 
 ```bash
 # HOST — cabut Ingress monitoring, uninstall chart, hapus namespace
-cd kubernetes/setup-cluster/kind
+cd kubernetes/setup-cluster/supporting
 kubectl delete ingress prometheus grafana -n monitoring --ignore-not-found
-kubectl delete --ignore-not-found -f prometheus-servicemonitor.yml
 helm uninstall monitoring -n monitoring
 kubectl delete namespace monitoring --ignore-not-found
 ```
@@ -1031,9 +1039,8 @@ kubectl delete namespace monitoring --ignore-not-found
 **3) Ingress controller** (opsional — ikut hilang saat cluster dihapus)
 
 ```bash
-# HOST — cabut ingress-nginx dari cluster
-cd kubernetes/setup-cluster/kind
-kubectl delete --ignore-not-found -f nginx-ingress.yaml
+# HOST — cabut ingress-nginx (manifest-nya inline di 3-install-ingress.sh)
+kubectl delete namespace ingress-nginx --ignore-not-found
 ```
 
 **4) Hapus cluster kind** (langkah terakhir)
