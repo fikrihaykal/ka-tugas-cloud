@@ -50,6 +50,14 @@ def nearest(d,t,tol):
 def load_workload(path):
     with open(path,newline="") as f:return list(csv.DictReader(f))
 
+# Pod names do not share the application name. Grouped so pod=~"__APP__.*" matches every shop pod.
+ONLINE_BOUTIQUE_PODS="(frontend|cartservice|checkoutservice|currencyservice|emailservice|paymentservice|productcatalogservice|recommendationservice|shippingservice|redis-cart|adservice)"
+
+def app_pattern(app):
+    if app=="online-boutique":
+        return ONLINE_BOUTIQUE_PODS
+    return re.escape(app)
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--experiment",required=True)
@@ -71,7 +79,7 @@ def main():
     status=[]
     outdir=exp/"metrics"; outdir.mkdir(exist_ok=True)
     for name,q in qenv.items():
-        q=q.replace("__NAMESPACE__",a.namespace).replace("__APP__",re.escape(app))
+        q=q.replace("__NAMESPACE__",a.namespace).replace("__APP__",app_pattern(app))
         try:
             rows=flatten(prom_range(a.prometheus_url,q,start,end,step))
             write_metric(outdir/(name.lower()+".csv"),rows)

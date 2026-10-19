@@ -16,6 +16,7 @@ The bundle is independent of a particular experiment stage number.
 | `database-api` | HTTP API → PostgreSQL | database dependency and queueing effects |
 | `cache-api` | HTTP API → Redis | cache/network dependency |
 | `microservices` | frontend → backend | service-chain and Linkerd behavior |
+| `online-boutique` | Online Boutique (sibling repo, public images) | multi-service storefront under normal and burst load |
 
 ## Directory structure
 
@@ -34,6 +35,7 @@ cloud-dynamics-applications/
 ├── k8s/
 │   ├── namespace.yaml
 │   ├── ingress-template.yaml
+│   ├── online-boutique/   kustomize adapter; source stays in ka-ecommerce-microservices
 │   └── ...
 └── scripts/
     ├── build-and-load.sh
@@ -515,7 +517,34 @@ Switch target:
 
 The IP address does not need to be supplied again.
 
-# 18. Reproducibility
+# 18. Online Boutique
+
+The shop stays in the sibling repo `ka-ecommerce-microservices`. This bundle only adds a kustomize adapter. Both repos must stay next to each other under the same parent directory. Images are public; there is nothing to build. Do not deploy it in `cloud-dynamics` together with another application from this bundle, because metrics for `online-boutique` cover every shop pod in that namespace.
+
+```sh
+./scripts/build-and-load.sh online-boutique
+./scripts/deploy.sh online-boutique
+./scripts/smoke-test.sh online-boutique
+```
+
+Default URL:
+
+```text
+http://online-boutique.127.0.0.1.sslip.io/
+```
+
+From `cloud-dynamics-experiments`, normal load is `constant` and a flash-sale event is `burst`:
+
+```sh
+export TARGET_HOST=online-boutique.${HOST_IP:-127.0.0.1}.sslip.io
+export APPLICATION_NAME=online-boutique
+export APPLICATION_ARCHITECTURE=online-boutique
+./scripts/run-experiment.sh scenarios/constant.env
+```
+
+Remove it with `./scripts/remove.sh online-boutique`. The adapter drops Boutique's own Locust `loadgenerator` and the `frontend-external` LoadBalancer.
+
+# 19. Reproducibility
 
 For every experiment preserve:
 

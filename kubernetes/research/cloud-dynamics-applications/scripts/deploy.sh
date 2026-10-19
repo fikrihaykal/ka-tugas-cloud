@@ -11,19 +11,30 @@ CALLER_NAMESPACE=${NAMESPACE-}
 APP=${1:?Usage: deploy.sh APP}
 
 case "$APP" in
-  stateless-api|cpu-bound|memory-stateful|database-api|cache-api|microservices) ;;
+  stateless-api|cpu-bound|memory-stateful|database-api|cache-api|microservices|online-boutique) ;;
   *) echo "Unknown application: $APP" >&2; exit 1 ;;
 esac
 
 kubectl apply -f "$ROOT/k8s/namespace.yaml"
-kubectl apply -f "$ROOT/k8s/$APP.yaml"
+if [ "$APP" = online-boutique ]; then
+  # Release manifest lives in the sibling ecommerce repo, outside this kustomize root.
+  kubectl kustomize --load-restrictor LoadRestrictionsNone "$ROOT/k8s/online-boutique" | kubectl apply -f -
+else
+  kubectl apply -f "$ROOT/k8s/$APP.yaml"
+fi
 
 sed \
   -e "s/APP_NAME/$APP/g" \
   -e "s/HOST_IP/$HOST_IP/g" \
   "$ROOT/k8s/ingress-template.yaml" | kubectl apply -f -
 
-kubectl -n "$NAMESPACE" rollout status deployment/"$APP" --timeout=180s
+if [ "$APP" = online-boutique ]; then
+  for name in $(kubectl -n "$NAMESPACE" get deployment -o jsonpath='{range .items[*]}{.metadata.name}{" "}{end}'); do
+    kubectl -n "$NAMESPACE" rollout status "deployment/$name" --timeout=180s
+  done
+else
+  kubectl -n "$NAMESPACE" rollout status deployment/"$APP" --timeout=180s
+fi
 
 echo
 echo "Application : $APP"

@@ -40,6 +40,9 @@ Comment di dalam blok = **satu kelompok perintah** (bukan per baris). Ada 1 bari
 
 ```text
 .
+├── docs/
+│   ├── images/           diagram README
+│   └── tugas-1.md        Tugas 1 Online Boutique (panduan lengkap)
 ├── vm01/                 Modul 1 — mesin virtual
 ├── containers/
 │   ├── runc/             Modul 2 — runc
@@ -787,17 +790,33 @@ sh 4-cek-ingress.sh
 kubectl get nodes
 ```
 
-`1-create-cluster.sh` menaikkan `fs.inotify.max_user_*` (butuh `sudo`) supaya banyak pod/file-watch tidak gagal.
+`1-create-cluster.sh` menaikkan `fs.inotify.max_user_*` (butuh `sudo`) supaya banyak pod/file-watch tidak gagal. Nilai itu **tidak persist** setelah reboot WSL/host — ulangi dua baris `sysctl` di skrip itu setiap kali laptop/WSL baru dinyalakan, meski cluster `mylab99` masih ada di `docker ps`.
 
-`export` di dalam `sh 2-set-config.sh` tidak masuk ke shell pemanggil. Terminal lain perlu:
+`export` di dalam `sh 2-set-config.sh` tidak masuk ke shell pemanggil. Terminal lain perlu (ganti path absolut ke clone kamu):
 
 ```bash
-# HOST — set ulang env di terminal baru
-export KUBECONFIG=/path/ke/kubernetes/setup-cluster/kind/kubeconfig
-export PATH="/path/ke/kubernetes/bin:$PATH"
+# HOST — set ulang env di terminal baru (contoh dari root repo)
+export PATH="$PWD/kubernetes/bin:$PATH"
+export KUBECONFIG="$PWD/kubernetes/setup-cluster/kind/kubeconfig"
 ```
 
 `4-cek-ingress.sh` menunggu controller paling lama 90 detik. Ulangi bila pod belum Ready.
+
+**Kalau `:80` reset / ingress `CrashLoopBackOff` / kube-proxy `too many open files`:** limit inotify host terlalu kecil (umum setelah reboot). Perbaiki lalu restart pod yang crash:
+
+```bash
+# HOST — naikkan limit (persist sampai reboot berikutnya)
+sudo sysctl -w fs.inotify.max_user_instances=8192
+sudo sysctl -w fs.inotify.max_user_watches=1048576
+# alternatif tanpa sudo password di prompt: lewat node kind (ikut ubah host)
+docker exec --privileged mylab99-control-plane \
+  sysctl -w fs.inotify.max_user_instances=8192 fs.inotify.max_user_watches=1048576
+
+kubectl -n kube-system delete pod -l k8s-app=kube-proxy
+kubectl -n ingress-nginx delete pod -l app.kubernetes.io/component=controller
+kubectl -n ingress-nginx rollout status deploy/ingress-nginx-controller --timeout=120s
+curl -sI -H 'Host: prometheus.127.0.0.1.sslip.io' http://127.0.0.1/ | head -5
+```
 
 ### 6.2 Prometheus + Grafana (Helm)
 
@@ -843,12 +862,19 @@ Komponen di folder yang sama, **opsional** (bukan syarat case 1–3):
 # HOST — unduh + jalankan Octant, cek dashboard
 cd kubernetes/apps/1_visualizer
 sh download.sh
-export KUBECONFIG=/path/ke/kubernetes/setup-cluster/kind/kubeconfig
+export KUBECONFIG="$PWD/../../setup-cluster/kind/kubeconfig"
+# atau absolut: .../ka-tugas-cloud/kubernetes/setup-cluster/kind/kubeconfig
 sh run.sh
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:22222/
 ```
 
-PID proses ada di `octant.pid`.
+PID proses ada di `octant.pid`. Log: `octant.nohup.out`.
+
+`run.sh` bind ke **`127.0.0.1:22222` (IPv4)** supaya Firefox di Windows/WSL bisa buka localhost. Listener lama `:22222` sering hanya IPv6 — di WSL, Windows `127.0.0.1` gagal connect meski `curl` di dalam WSL sukses.
+
+Kalau browser Windows tetap gagal: pastikan proses hidup (`ss -ltn | grep 22222` harus `127.0.0.1:22222`), lalu reload. Jangan pakai IP WSL kecuali localhost benar-benar tidak di-forward.
+
+Di Octant, ganti **namespace** di UI (bukan selalu `default`). Online Boutique = `cloud-dynamics`; pod `web1-deployment-*` di `default` sisa case lab lama, **bukan** toko.
 
 ### Case 1 — ingress HTTP
 
@@ -956,7 +982,7 @@ Empat folder, urutannya tetap:
 
 | Folder | Peran |
 |---|---|
-| `cloud-dynamics-applications` | Image + deploy (stateless, CPU, memory, DB, cache, microservices) |
+| `cloud-dynamics-applications` | Image + deploy (stateless, CPU, memory, DB, cache, microservices, online-boutique) |
 | `cloud-dynamics-experiments` | Generator beban (`constant`, `ramp`, `burst`, `periodic`, `variable`) |
 | `cloud-dynamics-metrics` | Tarik Prometheus untuk jendela ukur yang sama |
 | `cloud-dynamics-analysis-venv` | Jupyter / pandas atas `combined.csv` |
@@ -982,25 +1008,23 @@ EXP=../cloud-dynamics-experiments/results/<experiment-id>
 ./scripts/collect-experiment.sh "$EXP" stateless-api
 ```
 
-Profil lain (setelah baseline valid): `scenarios/ramp.env`, `burst.env`, `periodic.env`, `variable.env`. Aplikasi lain: ulang build/deploy/smoke dengan nama `cpu-bound`, `memory-stateful`, `database-api`, `cache-api`, atau `microservices` (yang terakhir lebih masuk akal kalau Linkerd sudah terpasang).
+Profil lain (setelah baseline valid): `scenarios/ramp.env`, `burst.env`, `periodic.env`, `variable.env`. Aplikasi lain: ulang build/deploy/smoke dengan nama `cpu-bound`, `memory-stateful`, `database-api`, `cache-api`, atau `microservices` (yang terakhir lebih masuk akal kalau Linkerd sudah terpasang). Untuk **Tugas 1 Online Boutique** (normal + flash sale), ikuti **[docs/tugas-1.md](docs/tugas-1.md)** — jangan hanya cuplikan di bawah.
 
-Analisis (opsional, butuh `python3-venv`):
+### Tugas 1 — Online Boutique (normal dan flash sale)
 
-```bash
-# HOST — Jupyter di http://127.0.0.1:8888
-cd kubernetes/research/cloud-dynamics-analysis-venv
-./scripts/create-venv.sh
-./scripts/start-jupyter.sh
-```
+Panduan lengkap (alat, tutor Octant/Grafana/Helm/Prometheus, preflight, eksperimen, troubleshoot) ada di file terpisah:
 
-Detail: README di tiap folder Cloud Dynamics.
+**→ [docs/tugas-1.md](docs/tugas-1.md)**
 
-Setelah eksperimen selesai, matikan workload research dulu (jangan langsung hapus cluster):
+Ringkas: SUT = Online Boutique; normal = `constant`; flash sale = `burst`; deliverable = dua set `workload.csv` + `combined.csv`. Prasyarat: **6.1** + **6.2** (Octant **6.3** disarankan). Sibling repo `ka-ecommerce-microservices` wajib.
+
+Setelah research selesai (Tugas 1 atau app lab lain), cabut workload dulu sebelum hapus cluster:
 
 ```bash
-# HOST — cabut app yang sempat di-deploy, lalu namespace
+# HOST — contoh cabut app lab; untuk boutique lihat docs/tugas-1.md §10
 cd kubernetes/research/cloud-dynamics-applications
-./scripts/remove.sh stateless-api
+./scripts/remove.sh online-boutique
+# atau: ./scripts/remove.sh stateless-api
 kubectl delete namespace cloud-dynamics --ignore-not-found
 ```
 

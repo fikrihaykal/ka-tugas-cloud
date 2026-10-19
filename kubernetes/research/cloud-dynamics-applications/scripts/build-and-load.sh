@@ -10,6 +10,12 @@ CALLER_NAMESPACE=${NAMESPACE-}
 
 APP=${1:-all}
 
+if [ "$APP" = online-boutique ]; then
+  echo "online-boutique uses public images from the ecommerce release manifest."
+  echo "Nothing to build. kind nodes pull the images when the pods start."
+  exit 0
+fi
+
 build_one() {
   n=$1
   echo "Building cloud-dynamics/$n:latest"
