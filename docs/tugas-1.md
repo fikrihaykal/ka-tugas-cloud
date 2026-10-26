@@ -4,7 +4,7 @@ Panduan lengkap terpisah dari README root. README hanya merujuk ke file ini.
 
 **System under test:** Online Boutique (microservices e-commerce).  
 **Kondisi normal:** profil workload `constant`.  
-**Event flash sale:** profil workload `burst` ke URL yang sama.  
+**Event flash sale:** profil workload `burst-flash-sale` ke URL yang sama.  
 **Deliverable inti:** dua folder hasil eksperimen, masing-masing berisi `workload.csv`, `metadata.json`, `measurement-window.env`, dan setelah collect: `combined.csv`.
 
 ```text
@@ -21,7 +21,7 @@ Kedua repo harus berdampingan. Image toko **publik** (tidak di-build). Jangan de
 
 | Bagian | Yang harus ada |
 |---|---|
-| **1 — Environment** | Cluster + monitoring + toko jalan; dua run (`constant`, `burst`); metrik terkumpul pada window yang sama |
+| **1 — Environment** | Cluster + monitoring + toko jalan; dua run (`constant`, `burst-flash-sale`); metrik terkumpul pada window yang sama |
 | **2 — Satu perilaku** | Satu fenomena dari data (workload ↔ resource ↔ performance), dengan evidence angka |
 | **3 — Research problem** | Satu pertanyaan riset yang lahir dari fenomena itu |
 
@@ -40,9 +40,9 @@ Eksperimen ini bukan “satu website”. Ada beberapa lapisan. Kalau bingung ken
 | Package chart | **Helm** | Memasang stack monitoring (`kube-prometheus-stack`) | CLI: `helm list -n monitoring` |
 | Masuk HTTP ke cluster | **ingress-nginx** | Meneruskan host `*.sslip.io` ke service | Port host **80** / **443** |
 | Aplikasi under test | **Online Boutique** | Toko multi-service yang di-load | http://online-boutique.127.0.0.1.sslip.io/ |
-| Generate beban | **cloud-dynamics-experiments** | `constant` / `burst` → `workload.csv` | Script Python loadgen |
-| Time-series metrics | **Prometheus** | Menyimpan metrik cluster/pod; di-query saat collect | http://prometheus.127.0.0.1.sslip.io/ |
-| Dashboard visual | **Grafana** | Grafik dari Prometheus (CPU, memory, dll.) | http://grafana.127.0.0.1.sslip.io/ |
+| Generate beban | **cloud-dynamics-experiments** | `constant` / `burst-flash-sale` → `workload.csv` | Script Python loadgen |
+| Time-series metrics | **Prometheus** | Menyimpan metrik cluster/pod dan latency ingress; grafik langsung + sumber `combined.csv` | http://prometheus.127.0.0.1.sslip.io/ |
+| Dashboard visual | **Grafana** | Grafik langsung: p95 latency toko, request rate, CPU, memory | http://grafana.127.0.0.1.sslip.io/ |
 | Browser cluster | **Octant** | Lihat namespace, pod, log, deployment | http://127.0.0.1:22222/ |
 | Gabung metrik + workload | **cloud-dynamics-metrics** | Tarik PromQL untuk window ukur → `combined.csv` | Script |
 
@@ -191,7 +191,9 @@ DNS **sslip.io**: nama `foo.127.0.0.1.sslip.io` resolve ke `127.0.0.1`. Cocok un
 
 ### 3.6 Prometheus — gudang metrik
 
-**Fungsi:** scrape metrik dari cluster (node, kube-state-metrics, pod yang expose metrics) dan simpan sebagai time series. Saat eksperimen selesai, script `collect-experiment.sh` **memanggil HTTP API Prometheus** untuk window waktu yang sama dengan `workload.csv`, lalu menulis `combined.csv`.
+**Fungsi:** scrape metrik dari cluster (node, kube-state-metrics, pod, dan ingress-nginx) dan simpan sebagai time series. Ingress controller sudah `--enable-metrics=true`. Skrip pasang Prometheus membuat `ServiceMonitor` `ingress-nginx` supaya durasi request toko masuk ke Prometheus. Saat eksperimen selesai, script `collect-experiment.sh` memanggil HTTP API Prometheus untuk window yang sama dengan `workload.csv`, lalu menulis `combined.csv`.
+
+Grafik di UI ini dipakai **saat beban sedang jalan**, supaya p95 kelihatan tanpa menunggu CSV. Replica toko tidak diubah: tetap satu pod per service seperti di manifest.
 
 **Buka UI:**
 
@@ -204,27 +206,103 @@ curl -fsS "http://prometheus.${HOST_IP:-127.0.0.1}.sslip.io/-/healthy"
 # Prometheus Server is Healthy.
 ```
 
-**Tutorial singkat di UI Prometheus**
+**Cek target ingress sebelum eksperimen**
 
-1. Buka URL di atas.
-2. Tab **Graph** / **Query**.
-3. Contoh query (sesuaikan waktu dengan window eksperimen):
-
-```promql
-# CPU usage rate container (contoh; nama metric bisa beda per stack)
-sum by (namespace, pod) (rate(container_cpu_usage_seconds_total{namespace="cloud-dynamics"}[1m]))
+```bash
+kubectl -n monitoring get servicemonitor ingress-nginx
+kubectl -n ingress-nginx get svc ingress-nginx-controller-metrics
 ```
 
-4. Atur range waktu ke sekitar `MEASUREMENT_START_EPOCH` … `MEASUREMENT_END_EPOCH` dari file `measurement-window.env` di folder results.
-5. Execute. Kalau ada garis, scrape jalan.
+Di UI: **Status → Targets**. Cari job yang memuat `ingress-nginx`. Harus `UP`. Kalau `ServiceMonitor` tidak ada, pasang sekali (sama dengan yang ditulis `5-install-prometheus.sh`):
 
-Untuk Tugas 1, **tidak wajib** screenshot Prom UI — yang wajib adalah `combined.csv` dari collector. UI berguna untuk cek “apakah ada data?” sebelum/saat analisis.
+```bash
+kubectl apply -f - <<'EOF'
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ingress-nginx
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+    - ingress-nginx
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ingress-nginx
+      app.kubernetes.io/component: controller
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 5s
+EOF
+```
 
-**Status / Targets:** menu **Status → Targets**. Banyak target `UP`. Kalau banyak `DOWN`, collect bisa kosong/aneh.
+Tunggu sekitar 15 detik, lalu cek Targets lagi.
+
+**Query yang ditonton saat beban jalan**
+
+Tab **Graph**. Range **Last 15 minutes**. Satuan p95 di bawah ini **milidetik**, supaya sama dengan kolom `p95_latency_ms` di CSV.
+
+```promql
+# p95 latency toko, milidetik
+histogram_quantile(
+  0.95,
+  sum by (le) (
+    rate(nginx_ingress_controller_request_duration_seconds_bucket{
+      ingress="online-boutique"
+    }[1m])
+  )
+) * 1000
+```
+
+```promql
+# request per detik yang lewat ingress toko
+sum(rate(nginx_ingress_controller_requests{ingress="online-boutique"}[1m]))
+```
+
+```promql
+# CPU namespace toko, core. Pembanding garis p95: catat apakah ikut naik
+sum(rate(container_cpu_usage_seconds_total{namespace="cloud-dynamics",container!="",container!="POD"}[1m]))
+```
+
+```promql
+# memory working set toko, MB
+sum(container_memory_working_set_bytes{namespace="cloud-dynamics",container!="",container!="POD"}) / 1024 / 1024
+```
+
+```promql
+# pod Ready di namespace toko. Baseline sebelum beban: 11. Catat kalau berkurang
+sum(kube_pod_status_ready{namespace="cloud-dynamics",condition="true"})
+```
+
+```promql
+# restart container toko. Baseline sebelum beban: 0. Catat kalau naik
+sum(kube_pod_container_status_restarts_total{namespace="cloud-dynamics"})
+```
+
+```promql
+# network receive toko, byte/detik
+sum(rate(container_network_receive_bytes_total{namespace="cloud-dynamics"}[1m]))
+```
+
+```promql
+# request non-2xx per detik di ingress toko. Catat kalau lepas dari 0
+sum(rate(nginx_ingress_controller_requests{ingress="online-boutique",status!~"2.."}[1m]))
+```
+
+Tiap query = satu grafik. Yang ditonton terus selama flash sale: p95, request rate, dan CPU. Sisanya pembanding: memory, pod Ready, restart, network, dan request gagal.
+
+Garis p95 baru muncul setelah ada request (smoke atau loadgen). Sebelum itu query boleh kosong. Kalau setelah ada beban tetap kosong, buka kotak metrik, ketik `nginx_ingress_controller_request_duration_seconds_bucket`, dan pakai nilai label `ingress` yang benar-benar ada.
+
+Query Linkerd tidak dipakai. Di run ini kolom itu kosong karena mesh-nya tidak terpasang.
+
+Untuk Tugas 1, yang wajib tetap `combined.csv`. Grafik ini supaya kamu melihat lonjakan p95 pada saat itu terjadi.
 
 ### 3.7 Grafana — dashboard di atas Prometheus
 
-**Fungsi:** visualisasi. Datasource default menunjuk ke Prometheus di cluster. Lebih enak dibaca daripada PromUI mentah untuk CPU/memory pod.
+**Fungsi:** visualisasi dengan refresh otomatis. Datasource default menunjuk ke Prometheus di cluster. Untuk Tugas 1, Grafana dipakai menonton p95 dan request rate toko sambil loadgen berjalan, plus CPU/memory namespace. Replica tidak ditambah dari sini.
 
 **Buka:**
 
@@ -241,17 +319,27 @@ kubectl get secret monitoring-grafana -n monitoring \
   -o jsonpath='{.data.admin-password}' | base64 -d; echo
 ```
 
-**Tutorial singkat**
+**Tutorial singkat — latency langsung**
 
 1. Login `admin` + password dari perintah di atas.
-2. Menu **Dashboards** → cari dashboard bawaan kube-prometheus-stack, misalnya:
-   - *Kubernetes / Compute Resources / Namespace (Pods)*
-   - *Kubernetes / Compute Resources / Pod*
-3. Filter **namespace** = `cloud-dynamics`.
-4. Set time range ke window eksperimen (atau “Last 15 minutes” saat burst masih jalan).
-5. Amati CPU/memory frontend vs service lain saat flash sale.
+2. Menu **Explore** (ikon kompas). Datasource: **Prometheus**.
+3. Time range **Last 15 minutes**. Refresh **5s**.
+4. Tempel query dari §3.6, satu query per tab Explore. Minimal tiga tab: p95, request rate, CPU. Tab memory, pod Ready, restart, network, dan request non-2xx dibuka kalau mau melihat pembandingnya sekaligus.
+5. Bentuk yang harus kelihatan di request rate, kalau replica masih bawaan:
+   - sekitar 2 menit di 10 RPS;
+   - lonjakan ke 400 RPS selama sekitar 1 menit;
+   - turun pelan menuju 10 RPS selama sekitar 6 menit, bukan jatuh sekaligus;
+   - 1 menit terakhir diam di 10 RPS.
+   p95 saat 10 RPS di awal ada di kisaran puluhan ms. Saat 400 RPS, dan selama request rate sudah turun tapi masih tinggi, bandingkan apakah p95 ikut turun atau masih di kisaran detik. CPU dipakai sebagai pembanding garis itu.
 
-Grafana **tidak** menggantikan `combined.csv`. Ia untuk observasi dan membantu menulis Bagian 2 (fenomena).
+**CPU dan memory (pembanding)**
+
+1. Menu **Dashboards** → *Kubernetes / Compute Resources / Namespace (Pods)*.
+2. Filter **namespace** = `cloud-dynamics`.
+3. Time range **Last 15 minutes**.
+4. Bandingkan CPU dan memory toko dengan garis p95 di Explore. Jangan mengubah replica di tengah run.
+
+Grafana tidak menggantikan `combined.csv`. CSV untuk angka yang ditulis di laporan. Grafana untuk melihat garisnya saat eksperimen masih jalan.
 
 ### 3.8 Octant — browser resource Kubernetes
 
@@ -316,7 +404,9 @@ Profil Tugas 1:
 | File | Arti |
 |---|---|
 | `scenarios/constant.env` | `DURATION=30`, `RPS=25` — beban rata (normal) |
-| `scenarios/burst.env` | `DURATION=600`, base 10 RPS, burst 150 RPS mulai detik 180 selama 120 dtk — flash sale |
+| `scenarios/burst-flash-sale.env` | Flash sale, `DURATION=600`. 0–120 dtk: 10 RPS. 120–180: 400 RPS. 180–540: turun pelan 400 → 10. 540–600: 10 RPS. `WORKERS=2000` (400 × timeout 5 dtk) supaya antrean tidak mentok di generator |
+
+`scenarios/burst.env` adalah profil kotak lama (150 RPS lalu langsung balik ke 10). Bukan run Tugas 1 ini.
 
 ---
 
@@ -354,6 +444,9 @@ sudo sysctl -w fs.inotify.max_user_watches=1048576
 
 kubectl -n ingress-nginx get pods
 curl -fsS "http://prometheus.${HOST_IP}.sslip.io/-/healthy"
+kubectl -n monitoring get servicemonitor ingress-nginx
+kubectl -n cloud-dynamics get deploy -o custom-columns=NAME:.metadata.name,REPLICAS:.spec.replicas
+# REPLICAS kosong atau 1 = bawaan. Jangan diubah untuk run ini.
 
 # sapu sisa case lab (abaikan NotFound)
 kubectl delete \
@@ -390,7 +483,11 @@ Octant: namespace `cloud-dynamics`.
 
 ## 7. Eksperimen (inti)
 
-Jalankan di **satu** terminal, env sudah di-set (§3.1).
+Replica tetap seperti manifest. Jangan pasang autoscaler dan jangan menaikkan `replicas` sebelum kedua run ini selesai. Tujuannya melihat p95 waktu semua service masih satu pod.
+
+**Sebelum** menjalankan beban, buka Grafana Explore (atau Prometheus Graph) dengan query §3.6. Range 15 menit, refresh 5 detik. Biarkan jendela itu terbuka.
+
+Jalankan di **satu** terminal lain, env sudah di-set (§3.1).
 
 ```bash
 cd kubernetes/research/cloud-dynamics-experiments
@@ -400,10 +497,16 @@ export APPLICATION_ARCHITECTURE=online-boutique
 
 ./scripts/check-environment.sh
 ./scripts/run-experiment.sh scenarios/constant.env
-# tunggu selesai (~30 dtk + warmup)
+# tunggu selesai (~30 dtk ukur + warmup)
 
-./scripts/run-experiment.sh scenarios/burst.env
-# ~10 menit; toko bisa lag — itu diharapkan
+./scripts/run-experiment.sh scenarios/burst-flash-sale.env
+# ~10 menit ukur + warmup. Toko bisa lag — itu diharapkan.
+# Setelah warmup, bentuk bebannya:
+#   0–120 dtk   10 RPS
+#   120–180     400 RPS
+#   180–540     turun pelan 400 → 10
+#   540–600     10 RPS
+# Yang ditonton: request rate sudah menurun, p95 belum tentu ikut turun.
 ```
 
 Hasil muncul di:
@@ -416,7 +519,7 @@ kubernetes/research/cloud-dynamics-experiments/results/
 │   ├── measurement-window.env
 │   ├── scenario.env
 │   └── …
-└── burst-<stamp>-rN/
+└── burst-flash-sale-<stamp>-rN/
     └── …
 ```
 
@@ -432,20 +535,22 @@ ls ../cloud-dynamics-experiments/results/
   online-boutique
 
 ./scripts/collect-experiment.sh \
-  ../cloud-dynamics-experiments/results/burst-<id> \
+  ../cloud-dynamics-experiments/results/burst-flash-sale-<id> \
   online-boutique
 ```
 
-Ganti `constant-<id>` / `burst-<id>` dengan nama folder nyata. Tiap folder harus punya `combined.csv` setelah collect sukses.
+Ganti `constant-<id>` / `burst-flash-sale-<id>` dengan nama folder nyata. Tiap folder harus punya `combined.csv` setelah collect sukses.
 
-**Saat eksperimen jalan, boleh buka bersamaan:**
+**Saat eksperimen jalan, jendela yang dibuka:**
 
 | Alat | Untuk apa |
 |---|---|
-| Toko | Rasakan lag saat burst |
-| Octant | Pod restart? Ready? |
-| Grafana | CPU/memory namespace `cloud-dynamics` |
-| Prometheus | Query kasar / Targets UP |
+| Grafana Explore, query p95 | Garis latency toko, dalam milidetik. Ini yang ditonton |
+| Grafana Explore, query request rate | 10 RPS, lonjak ke 400, lalu turun pelan ke 10. Bukan jatuh sekaligus |
+| Grafana dashboard CPU/memory | Pembanding namespace `cloud-dynamics` saat p95 sedang tinggi |
+| Toko di browser | Halaman terasa lambat saat garis p95 naik |
+| Octant, namespace `cloud-dynamics` | Cek pod Ready, replica, dan restart. Replica tidak boleh dinaikkan manual |
+| Prometheus Targets | Hanya kalau garis p95 kosong: pastikan target ingress `UP` |
 
 ---
 
@@ -476,11 +581,17 @@ curl -fsS "http://prometheus.127.0.0.1.sslip.io/-/healthy"
 
 ### 8.3 Collect gagal: missing `measurement-window.env`
 
-Burst belum selesai. Tunggu proses `loadgen.py` / `run-experiment.sh` exit. Baru collect.
+Run flash sale belum selesai. Tunggu proses `loadgen.py` / `run-experiment.sh` exit. Baru collect. Kalau ingress jatuh (`too many open files`) di tengah 400 RPS, lihat §8.1, lalu turunkan `BURST_RPS` di `scenarios/burst-flash-sale.env` dan set `WORKERS` ke `BURST_RPS` kali 5.
 
 ### 8.4 Smoke / toko 404 atau reset
 
 Ingress down, atau Ingress host bentrok dengan case lama. Preflight + §8.1.
+
+### 8.5 Grafik p95 kosong padahal toko kebuka
+
+1. **Status → Targets** di Prometheus. Target `ingress-nginx` harus `UP`. Kalau ServiceMonitor belum ada, tempel YAML di §3.6.
+2. Generate sedikit trafik dulu (buka homepage, atau jalankan `constant`). Histogram kosong kalau belum ada request.
+3. Di kotak metrik Prometheus, cari `nginx_ingress_controller_request_duration_seconds_bucket`. Filter `ingress` harus `online-boutique`. Kalau nama ingress beda, ganti label di query.
 
 ---
 
@@ -493,7 +604,7 @@ cd kubernetes/research/cloud-dynamics-analysis-venv
 # http://127.0.0.1:8888
 ```
 
-Buka `combined.csv` dari folder `constant-…` dan `burst-…`. Untuk Bagian 2, jawab empat pertanyaan: apa yang terjadi, pada kondisi apa, metrics apa, mengapa penting di cloud — **dari angka**, bukan dugaan kosong.
+Buka `combined.csv` dari folder `constant-…` dan `burst-flash-sale-…`. Untuk Bagian 2, jawab empat pertanyaan: apa yang terjadi, pada kondisi apa, metrics apa, mengapa penting di cloud — **dari angka**, bukan dugaan kosong.
 
 ---
 
@@ -516,13 +627,15 @@ Ini **tidak** menghapus cluster kind / Prometheus. Matikan Modul 6 penuh hanya l
 **Bagian 1**
 
 - [ ] kind + ingress Ready
-- [ ] Prometheus healthy, Grafana login OK
+- [ ] Prometheus healthy, target `ingress-nginx` UP, Grafana login OK
+- [ ] Grafana Explore: query p95 + request rate terbuka sebelum run (replica tetap bawaan)
 - [ ] Octant (opsional tapi disarankan), namespace `cloud-dynamics`
 - [ ] Sibling `ka-ecommerce-microservices`
 - [ ] Case lab lama disapu
 - [ ] Deploy + smoke boutique
+- [ ] Saat `constant` / `burst-flash-sale` jalan, garis p95 dan request rate kelihatan di Grafana atau Prometheus
 - [ ] Run `constant` → results
-- [ ] Run `burst` → results
+- [ ] Run `burst-flash-sale` → results. Request rate: 10, lonjak 400, turun pelan ke 10
 - [ ] Collect → `combined.csv` untuk keduanya
 
 **Bagian 2** — satu fenomena + evidence  

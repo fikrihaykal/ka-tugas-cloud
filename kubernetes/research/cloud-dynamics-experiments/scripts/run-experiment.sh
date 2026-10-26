@@ -90,6 +90,9 @@ case "$PROFILE" in
   burst)
     set -- --base-rps "$BASE_RPS" --burst-rps "$BURST_RPS" --burst-start "$BURST_START" --burst-duration "$BURST_DURATION"
     ;;
+  burst-flash-sale)
+    set -- --base-rps "$BASE_RPS" --burst-rps "$BURST_RPS" --burst-start "$BURST_START" --burst-duration "$BURST_DURATION" --decay-duration "$DECAY_DURATION" --workers "$WORKERS"
+    ;;
   periodic)
     set -- --min-rps "$MIN_RPS" --max-rps "$MAX_RPS" --period-seconds "$PERIOD_SECONDS"
     ;;

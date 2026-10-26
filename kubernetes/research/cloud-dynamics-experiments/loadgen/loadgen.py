@@ -8,7 +8,7 @@ from urllib.error import URLError, HTTPError
 def args():
     p = argparse.ArgumentParser()
     p.add_argument("--url", required=True)
-    p.add_argument("--profile", choices=["constant","ramp","burst","periodic","variable"], required=True)
+    p.add_argument("--profile", choices=["constant","ramp","burst","burst-flash-sale","periodic","variable"], required=True)
     p.add_argument("--duration", type=float, required=True)
     p.add_argument("--timeout", type=float, default=5)
     p.add_argument("--sample-interval", type=float, default=1)
@@ -21,6 +21,7 @@ def args():
     p.add_argument("--burst-rps", type=float)
     p.add_argument("--burst-start", type=float, default=0)
     p.add_argument("--burst-duration", type=float, default=0)
+    p.add_argument("--decay-duration", type=float, default=0)
     p.add_argument("--min-rps", type=float)
     p.add_argument("--max-rps", type=float)
     p.add_argument("--period-seconds", type=float, default=60)
@@ -44,6 +45,17 @@ def target_rate(a, elapsed, rng, variable_state):
     if a.profile == "burst":
         inside = a.burst_start <= elapsed < a.burst_start + a.burst_duration
         return max(0.0, a.burst_rps if inside else a.base_rps)
+    if a.profile == "burst-flash-sale":
+        peak_end = a.burst_start + a.burst_duration
+        decay_end = peak_end + a.decay_duration
+        if elapsed < a.burst_start:
+            return max(0.0, a.base_rps)
+        if elapsed < peak_end:
+            return max(0.0, a.burst_rps)
+        if elapsed < decay_end and a.decay_duration > 0:
+            frac = (elapsed - peak_end) / a.decay_duration
+            return max(0.0, a.burst_rps + (a.base_rps - a.burst_rps) * frac)
+        return max(0.0, a.base_rps)
     if a.profile == "periodic":
         mid = (a.min_rps+a.max_rps)/2
         amp = (a.max_rps-a.min_rps)/2
