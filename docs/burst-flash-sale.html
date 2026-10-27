@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Online Boutique pada beban burst-flash-sale</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  body {
+    font-family: "Liberation Serif", "Times New Roman", serif;
+    font-size: 11.5pt;
+    line-height: 1.45;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 18pt; line-height: 1.25; margin: 0 0 6px; }
+  h2 { font-size: 13.5pt; margin: 18px 0 6px; }
+  p { margin: 0 0 8px; }
+  .kicker { font-family: "Liberation Sans", sans-serif; font-size: 9.5pt; letter-spacing: 0.04em; text-transform: uppercase; color: #444; margin-bottom: 4px; }
+  .sub { font-family: "Liberation Sans", sans-serif; font-size: 10pt; color: #333; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-family: "Liberation Sans", sans-serif; font-size: 9.5pt; }
+  th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; vertical-align: top; }
+  th { background: #f3f3f3; }
+  code { font-family: "Liberation Mono", monospace; font-size: 9.5pt; }
+  .note, .cap { font-family: "Liberation Sans", sans-serif; font-size: 9.5pt; color: #333; }
+  img.fig { width: 100%; height: auto; margin: 4px 0 2px; }
+  .cap { margin: 0 0 12px; }
+</style>
+</head>
+<body>
+
+<p class="kicker">Tugas 1 — Cloud Experimental Environment</p>
+<h1>Perilaku Online Boutique pada beban burst-flash-sale</h1>
+<p class="sub">Run <code>burst-flash-sale-20261026T231410Z-r4</code>. System under test: Online Boutique, satu pod per service. Dataset: <code>combined.csv</code> pada measurement window yang sama dengan <code>workload.csv</code>.</p>
+
+<p>Pengukuran ini memakai instrumen lab yang sudah tersedia: cluster kind, ingress-nginx, Prometheus, dan generator beban Cloud Dynamics. Arsitektur yang diuji adalah toko multi-service Online Boutique di namespace <code>cloud-dynamics</code>. Replica tidak diubah dari manifest. Tidak ada autoscaler yang menambah pod selama run.</p>
+
+<h2>Fenomena</h2>
+
+<p>Fenomena yang terbaca adalah keruntuhan goodput tanpa kejenuhan CPU. Begitu target naik dari 10 menjadi 400 request per detik, tingkat keberhasilan jatuh dari 100 persen ke sekitar 1 persen dan bertahan di sana sepanjang puncak serta sebagian besar penurunan beban, sementara CPU namespace tetap di bawah 0,05 core dan pod Ready tetap di sekitar 11. Goodput serta latency baru kembali ke kondisi dasar setelah target turun ke kisaran 70–110 request per detik.</p>
+
+<img class="fig" src="figures/goodput.png" alt="Target dan request berhasil">
+<p class="cap">Gambar 1. Target (biru) dan request berhasil per detik, dirata-rata 10 detik (merah). Pita merah muda adalah puncak 400 request per detik. Pita oranye adalah penurunan linier. Garis merah menempel di dasar selama target masih ratusan, lalu naik setelah target turun ke sekitar 140 request per detik.</p>
+
+<img class="fig" src="figures/cpu.png" alt="CPU namespace">
+<p class="cap">Gambar 2. Pemakaian CPU namespace <code>cloud-dynamics</code> pada jendela yang sama, dalam core. Sumbu berhenti di 0,06. Pada pita puncak garisnya justru turun, dan nilai tertinggi muncul ketika goodput pada Gambar 1 sudah mulai pulih.</p>
+
+<h2>Kondisi pengukuran</h2>
+
+<p>Target adalah homepage toko, <code>http://online-boutique.127.0.0.1.sslip.io/</code>, berupa permintaan GET. Profil workload bernama <code>burst-flash-sale</code>. Jendela yang masuk dataset berlangsung 600 detik, diambil satu sampel per detik, sehingga <code>combined.csv</code> berisi 600 baris. Sebelum jendela itu ada pemanasan 30 detik pada 5 request per detik yang hasilnya dibuang. Sesudah jendela ada pendinginan 15 detik yang juga tidak masuk CSV. Batas waktu tunggu klien adalah 5 detik. Generator memakai 2000 worker. Replikasi ke-4.</p>
+
+<p>Bentuk beban selama 600 detik itu tersusun dari empat ruas. Dari detik 0 sampai 120 target tetap 10 request per detik. Dari detik 120 sampai 180 target melonjak dan menempel di 400 request per detik. Dari detik 180 sampai 540 target turun linier dari 400 kembali ke 10, kira-kira berkurang 1,08 request per detik setiap detik. Dari detik 540 sampai 600 target kembali diam di 10 request per detik.</p>
+
+<table>
+  <tr><th>Parameter</th><th>Nilai</th></tr>
+  <tr><td>Profil</td><td><code>burst-flash-sale</code></td></tr>
+  <tr><td>Identitas run</td><td><code>burst-flash-sale-20261026T231410Z-r4</code></td></tr>
+  <tr><td>Durasi ukur</td><td>600 detik, interval sampel 1 detik</td></tr>
+  <tr><td>Beban dasar</td><td>10 request per detik</td></tr>
+  <tr><td>Puncak</td><td>400 request per detik, mulai detik 120, selama 60 detik</td></tr>
+  <tr><td>Penurunan</td><td>360 detik, linier dari 400 ke 10 request per detik (detik 180–540)</td></tr>
+  <tr><td>Ekor</td><td>10 request per detik pada detik 540–600</td></tr>
+  <tr><td>Timeout klien</td><td>5 detik</td></tr>
+  <tr><td>Worker generator</td><td>2000</td></tr>
+  <tr><td>Pemanasan / pendinginan</td><td>30 detik @ 5 RPS (dibuang) / 15 detik (di luar CSV)</td></tr>
+  <tr><td>Replica</td><td>bawaan manifest, satu pod per service</td></tr>
+</table>
+
+<h2>Apa yang terjadi</h2>
+
+<p>Pada 120 detik pertama toko berada dalam kondisi biasa. Seribu dua ratus request terkirim dan semuanya berhasil. Latency p95 di sekitar 32 milidetik. Sebelas pod berstatus Ready. Tidak ada restart yang berarti dan tidak ada request gagal. Pemakaian CPU median sekitar 0,013 core. Working set memori sekitar 30 MB.</p>
+
+<p>Pada detik 120 target naik menjadi 400 request per detik. Dua detik berikutnya latency request yang masih selesai naik ke kisaran 1–3 detik. Pada detik 126 antrean di generator menyentuh 2006, sama dengan batas worker, dan muncul gelombang selesai di sekitar 5,1–5,3 detik, yaitu batas timeout klien. Setelah gelombang itu, kira-kira dari detik 130, pola yang dominan adalah kegagalan cepat: sekitar 400 request per detik selesai dalam waktu kira-kira 20 milidetik dan tercatat gagal. Pod tetap 11 Ready. CPU tetap di sekitar 0,012 core.</p>
+
+<p>Selama puncak 60 detik itu generator mengirim 23.128 request. Yang berhasil 258, yaitu 1,1 persen. Yang gagal 22.866. Pada ruas penurunan awal, detik 180–300, target masih ratusan request per detik dan tingkat keberhasilan tetap 0,8 persen (305 berhasil dari 39.911 terkirim). Pada detik 300–420 keberhasilan masih 1,1 persen, tetapi request yang gagal kini banyak yang menggantung sampai timeout 5 detik. p95 pada ruas itu menempel di sekitar 5025 milidetik.</p>
+
+<p>Pemulihan muncul di sepanjang penurunan beban, bukan pada saat puncak berakhir. Kegagalan berhenti sekitar detik 448, ketika target sudah turun ke kira-kira 110 request per detik. Pada titik itu p95 request yang berhasil masih sekitar 3,7 detik. Selanjutnya latency turun mengikuti target: sekitar 1,3 detik pada 92 request per detik, sekitar 160 milidetik pada 70 request per detik, dan kembali ke sekitar 32 milidetik ketika target sudah 26 request per detik. Dari detik 540 sampai 600, pada 10 request per detik, tidak ada lagi request gagal dan p95 kembali ke sekitar 32 milidetik.</p>
+
+<table>
+  <tr><th>Detik</th><th>Target</th><th>Terkirim</th><th>Berhasil</th><th>Gagal</th><th>CPU median</th></tr>
+  <tr><td>0–120</td><td>10 RPS</td><td>1.200</td><td>1.200 (100%)</td><td>0</td><td>0,013 core</td></tr>
+  <tr><td>120–180</td><td>400 RPS</td><td>23.128</td><td>258 (1,1%)</td><td>22.866</td><td>0,012 core</td></tr>
+  <tr><td>180–300</td><td>400 → ~270 RPS</td><td>39.911</td><td>305 (0,8%)</td><td>39.428</td><td>0,005 core</td></tr>
+  <tr><td>300–420</td><td>~270 → ~140 RPS</td><td>24.673</td><td>269 (1,1%)</td><td>23.952</td><td>0,031 core</td></tr>
+  <tr><td>420–480</td><td>~140 → ~75 RPS</td><td>6.515</td><td>5.507 (85%)</td><td>1.638</td><td>0,046 core</td></tr>
+  <tr><td>480–600</td><td>~75 → 10 RPS</td><td>3.216</td><td>semua</td><td>0</td><td>turun ke ~0,015 core</td></tr>
+</table>
+
+<h2>Metrik yang bergerak bersama</h2>
+
+<p>Sisi klien yang berubah adalah laju penawaran, tingkat keberhasilan, dan latency request yang benar-benar selesai. <code>sent</code> mengikuti target: 10, lalu 400, lalu turun linier. <code>success</code> tidak mengikuti. Pada beban dasar keduanya sama. Pada puncak dan sebagian besar penurunan, keberhasilan menempel di sekitar satu persen. <code>failed</code> menampung sisanya. Latency punya dua wajah pada keruntuhan yang sama. Sebagian besar kegagalan di awal puncak selesai dalam puluhan milidetik. Dari kira-kira detik 300 sampai 448, latency request yang selesai menempel di batas timeout, sekitar 5 detik. Setelah kegagalan berhenti, p95 turun dari beberapa detik kembali ke puluhan milidetik.</p>
+
+<p>Median p95 per detik pada puncak tidak boleh dibaca sebagai keadaan toko. Nilainya bisa berada di sekitar 23 milidetik, karena detik-detik itu hanya memuat sedikit request yang lolos dan request itu selesai cepat. Angka yang mewakili fase tersebut adalah tingkat keberhasilan 1,1 persen, bukan median p95.</p>
+
+<p>Sisi sistem hampir tidak bergerak sebanding dengan beban. CPU seluruh namespace berada di antara 0,001 dan 0,050 core. Median pada saat baseline sekitar 0,013 core, pada puncak sekitar 0,012 core, dan paling tinggi di sekitar 0,046 core justru ketika beban sudah turun dan toko mulai pulih. Working set memori bergerak dari sekitar 30 MB ke paling tinggi 42 MB. Pod Ready sempat turun dari 11 menjadi 10 antara detik 185 dan 304, lalu kembali 11. Penghitung restart naik lima kali dalam langkah kecil, setara satu pod yang restart, bukan matinya seluruh toko. Kolom CPU throttled dan seluruh kolom Linkerd kosong, karena mesh tidak dipakai pada run ini.</p>
+
+<p>Hubungan yang terbaca: request rate naik lebih dari satu orde besar, goodput jatuh mendekati nol, CPU dan memori tetap jauh dari saturasi, dan jumlah pod hampir konstan. Request rate tidak linier terhadap CPU. Throughput berhasil menurun saat beban naik. Kapasitas CPU terlihat nganggur pada saat layanan sudah gagal melayani.</p>
+
+<h2>Mengapa ini penting di cloud</h2>
+
+<p>Dari sisi operasi, pod Ready dan pemakaian CPU memberikan kesan bahwa layanan sehat. Dari sisi pengguna, selama kira-kira lima menit hampir setiap permintaan gagal atau baru selesai di batas waktu 5 detik. SLA yang ditulis sebagai error rate atau latency terlewati, sementara sinyal kapasitas yang paling umum, yaitu utilisasi CPU, tidak menunjuk ke arah yang sama.</p>
+
+<p>Autoscaler yang memicu penambahan replica dari CPU tidak akan bergerak pada run ini. Ambang yang biasa, puluhan persen dari CPU request 100 milicore per service, tidak tercapai ketika keberhasilan sudah 1 persen. Kapasitas replica tetap satu pod per service sepanjang keruntuhan. Pemulihan yang terekam terjadi karena beban yang ditawarkan diturunkan oleh skenario, bukan karena ada pod baru.</p>
+
+<p>Efisiensi resource pada jendela ini juga terbalik dari harapan. CPU tertinggi muncul ketika tingkat keberhasilan sudah membaik, bukan ketika 400 request per detik sedang ditawarkan. Menambah CPU limit atau menonton memori tidak menjelaskan hilangnya goodput.</p>
+
+<h2>Masalah penelitian yang mengikuti</h2>
+
+<p>Ranah yang mengikuti data ini adalah pengelolaan SLA, dengan kaitan langsung ke alokasi kapasitas. Bottleneck per service belum bisa dinamai, karena metrik yang terkumpul adalah agregat namespace dan metrik mesh tidak ada. Yang bisa ditunjuk adalah ketidakcocokan antara sinyal kapasitas dan hasil layanan.</p>
+
+<p>Masalahnya dapat dirumuskan sebagai berikut. Pada Online Boutique dengan satu replica per service, di bawah profil <code>burst-flash-sale</code> (10 request per detik, lalu 400 selama 60 detik, lalu turun linier selama 360 detik), tingkat keberhasilan jatuh ke sekitar 1 persen sementara CPU namespace tetap di bawah 0,05 core dan pod Ready tetap di sekitar 11. Sinyal infrastruktur yang mana, selain utilisasi CPU, yang mengikuti keruntuhan goodput itu cukup awal sehingga kapasitas dapat ditambah selagi request masih bisa dilayani, bukan setelah mayoritas request telah gagal atau mencapai timeout 5 detik?</p>
+
+<p class="note">Sumber angka: <code>kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261026T231410Z-r4/combined.csv</code>, bersama <code>scenario.env</code>, <code>metadata.json</code>, dan <code>measurement-window.env</code> pada folder yang sama. Measurement window epoch 1793056479–1793057067.</p>
+
+</body>
+</html>
