@@ -1021,7 +1021,7 @@ Ringkas: SUT = Online Boutique; normal = `constant`; flash sale = `burst`; deliv
 Setelah research selesai (Tugas 1 atau app lab lain), cabut workload dulu sebelum hapus cluster:
 
 ```bash
-# HOST — contoh cabut app lab; untuk boutique lihat docs/tugas-1.md §10
+# HOST — contoh cabut app lab; untuk boutique lihat docs/tugas-1.md bagian 6
 cd kubernetes/research/cloud-dynamics-applications
 ./scripts/remove.sh online-boutique
 # atau: ./scripts/remove.sh stateless-api
