@@ -1,0 +1,25 @@
+{
+  "experiment_id": "constant-20261029T224644Z-r4",
+  "profile": "constant",
+  "target_url": "http://online-boutique.127.0.0.1.sslip.io/",
+  "host_ip": "127.0.0.1",
+  "measurement_start_epoch": 1793314034,
+  "measurement_end_epoch": 1793314075,
+  "sample_interval_seconds": 1.0,
+  "warmup_seconds": 30,
+  "cooldown_seconds": 15,
+  "replicate": 4,
+  "application": {
+    "name": "online-boutique",
+    "architecture": "online-boutique",
+    "replicas": "unspecified",
+    "cpu_request": "unspecified",
+    "cpu_limit": "unspecified",
+    "memory_request": "unspecified",
+    "memory_limit": "unspecified"
+  },
+  "runtime": {
+    "python": "3.12.3",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39"
+  }
+}
