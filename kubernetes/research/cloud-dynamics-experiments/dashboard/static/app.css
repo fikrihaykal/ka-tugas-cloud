@@ -1,0 +1,131 @@
+:root {
+  --ink: #1a1a1a;
+  --muted: #555;
+  --line: #e4e4e4;
+  --panel: #fff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #f6f6f4;
+  color: var(--ink);
+  font-family: "Liberation Sans", "Segoe UI", sans-serif;
+  font-size: 14px;
+}
+
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.run {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.run select {
+  min-width: min(420px, 70vw);
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.meta, .note {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.series {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 14px 0;
+}
+
+.series label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.series input { margin: 0; }
+
+.swatch {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.panel {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 8px 4px;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 440px;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.tip {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  min-width: 180px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+}
+
+.tip strong { font-weight: 650; }
+
+.tip .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tip .name { color: var(--muted); }
+
+.empty {
+  margin: 24px 0;
+  color: var(--muted);
+}

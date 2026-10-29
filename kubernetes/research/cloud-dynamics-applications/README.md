@@ -542,7 +542,7 @@ export APPLICATION_ARCHITECTURE=online-boutique
 ./scripts/run-experiment.sh scenarios/constant.env
 ```
 
-Remove it with `./scripts/remove.sh online-boutique`. The adapter drops Boutique's own Locust `loadgenerator` and the `frontend-external` LoadBalancer.
+Remove it with `./scripts/remove.sh online-boutique`. The adapter drops Boutique's own Locust `loadgenerator` and the `frontend-external` LoadBalancer. It also sets `frontend` to 5 replicas; every other shop deployment stays at 1.
 
 # 19. Reproducibility
 

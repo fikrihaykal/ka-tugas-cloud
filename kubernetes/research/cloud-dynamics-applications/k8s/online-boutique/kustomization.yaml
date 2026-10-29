@@ -4,6 +4,19 @@ namespace: cloud-dynamics
 resources:
   - ../../../../../../ka-ecommerce-microservices/release/kubernetes-manifests.yaml
   - service.yaml
+replicas:
+  - name: frontend
+    count: 8
+  - name: currencyservice
+    count: 10
+  - name: productcatalogservice
+    count: 5
+  - name: cartservice
+    count: 4
+  - name: adservice
+    count: 3
+  - name: redis-cart
+    count: 1
 patches:
   - patch: |-
       $patch: delete

@@ -43,7 +43,7 @@ Bukan satu website. Tiap baris punya peran sendiri. Perintah menjalankannya ada 
 | **Helm** | Memasang chart `kube-prometheus-stack`. Tidak ada UI Helm. | Langkah 3 |
 | **Prometheus** | Simpan metrik cluster, pod, dan latency ingress. Sumber `combined.csv`, plus grafik saat beban jalan. | Langkah 3, http://prometheus.127.0.0.1.sslip.io/ |
 | **Grafana** | Grafik p95, request rate, CPU, memory. Tidak menggantikan CSV. | Langkah 3, http://grafana.127.0.0.1.sslip.io/ |
-| **Online Boutique** | Toko multi-service yang di-load. 11 service, masing-masing 1 pod. | Langkah 4, http://online-boutique.127.0.0.1.sslip.io/ |
+| **Online Boutique** | Toko multi-service yang di-load. 11 service. Frontend 5 pod, sisanya 1. | Langkah 4, http://online-boutique.127.0.0.1.sslip.io/ |
 | **Octant** | Lihat pod, log, deployment. Bukan grafik metrik. Opsional. | Langkah 5, http://127.0.0.1:22222/ |
 | **cloud-dynamics-experiments** | Loadgen `constant` dan `burst-flash-sale` → `workload.csv`. | Langkah 6 |
 | **cloud-dynamics-metrics** | Tarik PromQL untuk window yang sama → `combined.csv`. | Langkah 7 |
@@ -208,7 +208,7 @@ Halaman login yang muncul berarti Ingress Grafana sudah benar. Belum ada garis p
 
 ### 3.4 Toko
 
-**Buat apa:** Online Boutique, 11 service, masing-masing 1 replica. Manifest dari sibling repo. Loadgenerator bawaan Google tidak dipakai.
+**Buat apa:** Online Boutique, 11 service. Frontend 5 replica dari kustomize adapter. Service lain 1 replica. Manifest dari sibling repo. Loadgenerator bawaan Google tidak dipakai.
 
 Env 3.0 sudah di-set. Sibling repo wajib ada.
 
@@ -258,7 +258,7 @@ kubectl -n cloud-dynamics get deploy
 kubectl get pods -n cloud-dynamics
 ```
 
-Sebelas deployment, replica masing-masing **1**: `frontend`, `cartservice`, `checkoutservice`, `productcatalogservice`, `recommendationservice`, `adservice`, `currencyservice`, `emailservice`, `paymentservice`, `shippingservice`, `redis-cart`. Sebelas pod `1/1 Running`. Jangan naikkan replica dan jangan pasang autoscaler.
+Sebelas deployment. `frontend` **5/5**. Sisanya **1/1**: `cartservice`, `checkoutservice`, `productcatalogservice`, `recommendationservice`, `adservice`, `currencyservice`, `emailservice`, `paymentservice`, `shippingservice`, `redis-cart`. Lima belas pod `Running`. Jangan ubah replica lagi dan jangan pasang autoscaler.
 
 `kubectl get pods` tanpa `-n` tetap kosong. Toko tidak di namespace `default`.
 
@@ -288,7 +288,7 @@ sh run.sh
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:22222/
 ```
 
-`download.sh` sekali. `run.sh` bind `127.0.0.1:22222` (IPv4). Buka http://127.0.0.1:22222/ . Namespace **`cloud-dynamics`**. Workloads → Pods: sebelas nama di langkah 3.4. Network → Ingress: host toko.
+`download.sh` sekali. `run.sh` bind `127.0.0.1:22222` (IPv4). Buka http://127.0.0.1:22222/ . Namespace **`cloud-dynamics`**. Workloads → Pods: lima belas pod di langkah 3.4 (`frontend` lima, sisanya satu). Network → Ingress: host toko.
 
 Stop, dari root repo:
 
@@ -555,7 +555,7 @@ kubectl get pods -n monitoring
 kubectl get pods -n cloud-dynamics
 ```
 
-Empat node `Ready`. Controller ingress `1/1 Running`. Pod monitoring `Running`. Kalau toko belum dicabut, sebelas pod `cloud-dynamics` kembali `Running`. Lalu lanjut beban di langkah 3.6.
+Empat node `Ready`. Controller ingress `1/1 Running`. Pod monitoring `Running`. Kalau toko belum dicabut, lima belas pod `cloud-dynamics` kembali `Running`. Lalu lanjut beban di langkah 3.6.
 
 Kalau namespace `cloud-dynamics` sudah tidak ada, ulang langkah 3.4, bukan 3.1.
 
@@ -579,7 +579,7 @@ Lolos kalau `kind get clusters` mencetak `No kind clusters found` dan tidak ada 
 - [ ] 3.1 Empat node Ready. `kubectl get pods` tanpa `-A` kosong
 - [ ] 3.2 `Ingress HTTP reachable (status: 404)`, controller `1/1 Running`
 - [ ] 3.3 Prometheus healthy, pod monitoring `Running`, Grafana login tampil
-- [ ] 3.4 Sebelas pod toko `1/1`, replica 1, smoke HTML
+- [ ] 3.4 Frontend `5/5`, service lain `1/1` (15 pod), smoke HTML
 - [ ] 3.5 Octant opsional, namespace `cloud-dynamics`
 - [ ] 3.6 Query bagian 4 terbuka sebelum beban. `constant` lalu `burst-flash-sale`
 - [ ] 3.7 `combined.csv` di kedua folder

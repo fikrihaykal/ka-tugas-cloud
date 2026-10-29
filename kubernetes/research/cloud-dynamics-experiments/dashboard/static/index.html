@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workload runs</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Workload runs</h1>
+      <label class="run">
+        Run
+        <select id="run"></select>
+      </label>
+    </header>
+    <p id="meta" class="meta"></p>
+    <div id="series" class="series"></div>
+    <div class="panel">
+      <canvas id="chart"></canvas>
+      <div id="tip" class="tip" hidden></div>
+    </div>
+    <p id="note" class="note"></p>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
