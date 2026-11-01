@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Setelah burst berlalu: pemulihan lambat pada Online Boutique</title>
+<style>
+  body { font-family: "Ubuntu Sans", "Ubuntu", "DejaVu Sans", sans-serif; font-size: 10pt; line-height: 1.5; color: #0b0b0b; }
+  .kicker { font-size: 8.5pt; letter-spacing: 0.08em; text-transform: uppercase; color: #2a78d6; font-weight: bold; margin: 0 0 4px; }
+  h1 { font-size: 20pt; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 12.5pt; margin: 20px 0 5px; padding-top: 4px; border-top: 2px solid #0b0b0b; }
+  h3 { font-size: 10pt; margin: 12px 0 3px; }
+  p { margin: 0 0 7px; }
+  .sub { color: #52514e; font-size: 9.5pt; margin-bottom: 12px; }
+  .key { background: #eef4fc; border-left: 4px solid #2a78d6; padding: 8px 12px; margin: 8px 0 12px; }
+  .key p { margin: 0 0 4px; }
+  .warn { background: #fdf1ec; border-left: 4px solid #eb6834; padding: 8px 12px; margin: 8px 0 12px; }
+  .warn p { margin: 0 0 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 4px; font-size: 8.8pt; page-break-inside: avoid; }
+  th { text-align: left; background: #f3f2ef; border-bottom: 2px solid #0b0b0b; padding: 4px 6px; vertical-align: bottom; }
+  td { border-bottom: 1px solid #e6e5e1; padding: 4px 6px; vertical-align: top; }
+  td.n, th.n { text-align: right; }
+  img.fig { width: 100%; margin: 4px 0 2px; }
+  .cap { font-size: 8.5pt; color: #52514e; margin: 0 0 12px; }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; background: #f3f2ef; padding: 0 2px; }
+  ul { margin: 0 0 8px; padding-left: 18px; }
+  li { margin-bottom: 3px; }
+  .nb { page-break-inside: avoid; }
+  .pb { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<p class="kicker">Tugas 1 — Cloud Experimental Environment</p>
+<h1>Setelah burst berlalu: pemulihan yang lambat pada Online Boutique</h1>
+<p class="sub">Sembilan run <code>burst-flash-sale</code> (26 dan 29 Oktober) dengan jumlah replica yang berbeda-beda. System under test: Online Boutique di kind (3 worker, host 12 core). Tanpa autoscaler.</p>
+
+<div class="key">
+<p><b>Ringkasan.</b></p>
+<ul>
+<li><b>Pod yang lebih banyak menghilangkan request gagal, tetapi tidak menurunkan latency.</b> Pada konfigurasi tanpa gagal pun, p95 saat burst masih sekitar 10–30 kali di atas kondisi normal, dan 98 pod tidak lebih baik dari 67 pod.</li>
+<li><b>Latency pulih jauh sesudah beban turun.</b> p95 baru kembali di bawah 300 ms saat beban sudah turun ke 76–264 RPS, yaitu 178–299 detik setelah puncak berakhir.</li>
+<li><b>Konfigurasi yang sama bisa memberi hasil berbeda.</b> Dua run dengan 36 pod persis sama: gagal 44% pada satu run dan 0% pada run lainnya. Pembedanya yang terlihat adalah umur pod, bukan jumlahnya.</li>
+</ul>
+</div>
+
+<h2>1. Apa yang diukur</h2>
+
+<p>Profil beban <code>burst-flash-sale</code>: 10 RPS selama 120 detik, lompat ke 400 RPS selama 60 detik, turun linier ke 10 RPS sampai detik 540, lalu 10 RPS lagi. Satu run (23:12) memakai 100 → 600 RPS dan diberi tanda * di tabel, jadi tidak dibandingkan langsung. Delapan run lain memakai profil yang sama. Yang berubah antar run hanya replica tiap service, diubah manual oleh peneliti.</p>
+
+<table>
+<tr><th>Run (jam UTC)</th><th class="n">Pod</th><th class="n">Frontend</th><th class="n">Gagal saat burst</th><th class="n">p95 median saat burst (ms)</th><th class="n">Beban saat p95 pulih (RPS)</th><th class="n">Umur frontend (menit)</th></tr>
+<tr><td>R1 · 26/10</td><td class=n>11</td><td class=n>1</td><td class=n>99%</td><td class=n>24</td><td class=n>76</td><td class=n>47</td></tr>
+<tr><td>R2 · 29/10 12:38</td><td class=n>15</td><td class=n>5</td><td class=n>100%</td><td class=n>5025</td><td class=n>116</td><td class=n>18</td></tr>
+<tr><td>R3 · 29/10 13:27</td><td class=n>23</td><td class=n>3</td><td class=n>98%</td><td class=n>5032</td><td class=n>177</td><td class=n>67</td></tr>
+<tr><td>R4 · 29/10 13:56</td><td class=n>36</td><td class=n>8</td><td class=n>44%</td><td class=n>5029</td><td class=n>180</td><td class=n>6</td></tr>
+<tr><td>R5 · 29/10 14:20</td><td class=n>67</td><td class=n>16</td><td class=n>0%</td><td class=n>489</td><td class=n>207</td><td class=n>17</td></tr>
+<tr><td>R6 · 29/10 14:36</td><td class=n>98</td><td class=n>24</td><td class=n>0%</td><td class=n>1005</td><td class=n>77</td><td class=n>21</td></tr>
+<tr><td>R7 · 29/10 14:48</td><td class=n>67</td><td class=n>16</td><td class=n>0%</td><td class=n>357</td><td class=n>187</td><td class=n>45</td></tr>
+<tr><td>R8 · 29/10 14:59</td><td class=n>36</td><td class=n>8</td><td class=n>0%</td><td class=n>593</td><td class=n>163</td><td class=n>57</td></tr>
+<tr><td>R9 · 29/10 23:12 *</td><td class=n>36</td><td class=n>8</td><td class=n>28%</td><td class=n>5028</td><td class=n>264</td><td class=n>549</td></tr>
+</table>
+<p class="cap">p95 dihitung di sisi generator beban per detik. “Saat burst” adalah detik 120–180. “Pulih” adalah detik pertama setelah 180 di mana median p95 10 detik di bawah 300 ms dan tetap begitu sampai akhir. “Umur frontend” adalah median umur pod frontend yang Ready pada awal burst. Sebagai pembanding, p95 pada 10 RPS ada di kisaran 30–37 ms.</p>
+
+<h2>2. Temuan 1 — pod menghapus kegagalan, bukan latency</h2>
+
+<p>Dari 11 sampai 67 pod, proporsi request gagal saat burst turun dari hampir seluruhnya ke nol. Tetapi begitu gagal nol, p95 tidak ikut rendah. Pada empat run tanpa gagal, p95 median saat burst berkisar 357–1005 ms, sekitar 10–30 kali kondisi normal. Menambah pod dari 67 ke 98 malah tidak memperbaiki apa pun: p95 median naik dari 489 ke 1005 ms dan pulih lebih lambat.</p>
+
+<img class="fig" src="figures/konfigurasi.png" alt="Gagal, p95, dan beban pulih per konfigurasi">
+<p class="cap">Gambar 1. Tiga ukuran per konfigurasi, urut menurut waktu run. Sumbu-x: jumlah pod dan nomor run (R1–R9 di tabel). Batang abu-abu adalah run dengan beban berbeda (100 → 600 RPS). p95 yang rendah pada run 26/10 bukan tanda sehat: 99% request gagal cepat.</p>
+
+<p>Artinya jumlah pod hanyalah satu bagian dari kapasitas. Ada batas lain yang tidak berubah ketika pod ditambah. Sumber batas itu belum diketahui. Yang bisa disingkirkan dari data: CPU ingress-nginx hanya 0,3–0,4 core pada semua run, dan CPU total toko puncaknya 5,4 core dari 12 core host, jadi tidak ada bukti bahwa host atau ingress jenuh.</p>
+
+<div class="pb"></div>
+<h2>3. Temuan 2 — latency tertinggal di belakang beban</h2>
+
+<p>Gambar 2 menampilkan p95 sepanjang run. Pita oranye adalah puncak 400 RPS dan pita biru muda adalah penurunan. Kotak merah di dasar menandai detik di mana lebih dari separuh request gagal. Tanda itu penting: ketika request gagal cepat, p95 yang tercatat justru rendah (sekitar 20 ms), jadi p95 saja bisa menyesatkan.</p>
+
+<img class="fig" src="figures/p95-per-run.png" alt="p95 per run">
+<p class="cap">Gambar 2. p95 per detik (median bergerak 5 detik, skala log), satu panel per run. Garis putus-putus: 300 ms. Garis hitam: titik pulih beserta bebannya saat itu.</p>
+
+<p>Di semua run, p95 tidak mengikuti beban naik-turunnya. Pada run 26 Oktober (11 pod), p95 masih di kisaran 5 detik, yaitu batas timeout generator, ketika target sudah turun ke sekitar 140 RPS, dan baru normal di 76 RPS. Pada run terbaik pun, p95 baru pulih di 160–210 RPS. Padahal kondisi normal pada 10 RPS hanya 30 ms.</p>
+
+<p>Ini pola antrean yang belum terkuras: request yang menumpuk saat puncak masih harus dilayani, dan selama itu request baru ikut menunggu. Perlu ditegaskan batas klaimnya: data ini hanya punya satu arah, yaitu beban turun. Untuk menyebutnya histeresis, kita perlu uji naik-turun yang bertahap (bagian 5, percobaan 1).</p>
+
+<div class="pb"></div>
+<h2 style="margin-top:0">4. Temuan 3 — konfigurasi sama, hasil berbeda</h2>
+
+<p>Run 13:56 dan 14:59 memakai replica yang identik di setiap service (frontend 8, currency 10, productcatalog 5, cart 4, ad 3, total 36 pod). Hasilnya: gagal 44% dengan p95 median 5029 ms, lawan gagal 0% dengan p95 median 593 ms.</p>
+
+<img class="fig" src="figures/dingin-vs-hangat.png" alt="Dingin vs hangat">
+<p class="cap">Gambar 3. Kiri: urutan run dan jumlah pod. Run oranye datang setelah scale up dari 23 pod, run biru setelah scale down dari 67 pod. Kanan: p95 kedua run. Umur pod adalah median umur frontend yang Ready saat burst.</p>
+
+<p>Yang berbeda adalah riwayatnya. Pada 13:56 pod frontend rata-rata berumur sekitar 6 menit (baru dinaikkan dari 23 pod), sedangkan pada 14:59 sekitar 57 menit (sisa dari 67 pod yang sudah dipakai di run sebelumnya). Dugaan yang masuk akal: pod baru yang sudah Ready belum hangat (runtime, cache, koneksi antar-service) sehingga belum bisa menerima beban penuh. Bukti ini baru satu pasangan run, jadi statusnya hipotesis, bukan kesimpulan. Run 14:20 (pod berumur sekitar 17 menit, tanpa gagal tetapi p95 tinggi) tidak bertentangan dengan dugaan itu, tetapi juga tidak membuktikannya.</p>
+
+<h2>5. Mengapa ini penting di cloud, dan pertanyaan riset</h2>
+
+<p>Elastisitas cloud berjanji kapasitas bisa ditambah saat dibutuhkan. Data ini menunjukkan tiga jarak antara “pod sudah ada” dan “pod sudah melayani dengan sehat”. Pod yang Ready belum tentu hangat, pod tambahan tidak otomatis menurunkan latency, dan sesudah burst berlalu pengguna masih merasakan lambat. Operator membayar pod yang berjalan, jadi jarak ini adalah biaya tanpa manfaat.</p>
+
+<div class="key">
+<p><b>Pertanyaan riset.</b> Pada burst 3–4 kali beban normal, berapa lama kapasitas tambahan baru benar-benar melayani dengan p95 sehat (lead time dari burst mulai), komponen mana yang paling besar menyumbangnya, dan strategi infrastruktur apa yang paling banyak memotongnya sambil menjaga request tetap berhasil?</p>
+</div>
+
+<p>Komponen lead time yang bisa diukur terpisah: deteksi sinyal, keputusan scale, penjadwalan pod, penarikan image, startup, dan warm-up sampai p95 sehat.</p>
+
+<table>
+<tr><th style="width:4%">#</th><th style="width:34%">Percobaan</th><th>Yang dijawab</th></tr>
+<tr><td>1</td><td>Beban naik bertahap lalu turun bertahap (10, 25, 50, 100, 150, 200 RPS, 60–90 detik per tahap) pada satu konfigurasi baseline.</td><td>Titik lutut (RPS di mana p95 melewati SLO) sebagai kapasitas baseline <i>C</i>. Perbandingan naik vs turun menentukan apakah ada histeresis.</td></tr>
+<tr><td>2</td><td>Burst 3–4×<i>C</i> pada pod yang dingin (baru di-scale up) dan pada pod yang hangat, tanpa autoscaler.</td><td>Apakah pengaruh umur pod nyata, dan seberapa besar. Ini kontrol untuk percobaan berikutnya.</td></tr>
+<tr><td>3</td><td>Burst yang sama dengan HPA berbasis CPU, berbasis RPS atau in-flight request (KEDA), pre-scale terjadwal, dan pre-scale ditambah warm-up.</td><td>Lead time tiap strategi, request gagal total, dan p95 puncak. Ini inti pertanyaan riset.</td></tr>
+<tr><td>4</td><td>Opsional: load shedding atau rate limit di ingress selama puncak.</td><td>Apakah menolak sedikit request menjaga latency sisanya, dan memperpendek pemulihan.</td></tr>
+</table>
+<p class="cap">Percobaan 3 dan 4 memasang autoscaler dan mengubah ingress, sehingga di luar aturan baseline Tugas 1 (“jangan pasang autoscaler”). Untuk Tugas 1 cukup sampai rumusan masalah dan hipotesis.</p>
+
+<div class="pb"></div>
+<h2 style="margin-top:0">6. Batasan data</h2>
+
+<div class="warn nb">
+<ul>
+<li><b>Satu run per konfigurasi.</b> Tidak ada replikasi, jadi tidak ada ukuran variasi. Selisih antar konfigurasi yang kecil belum bisa dipercaya.</li>
+<li><b>p95 dari sisi generator beban, dibatasi timeout sekitar 5 detik.</b> “5 s” berarti request mencapai timeout, bukan latency sebenarnya. Request yang gagal cepat ikut menurunkan p95 (lihat kotak merah pada Gambar 2).</li>
+<li><b>Bukan semua faktor terkontrol.</b> Replica diubah manual antar run, run saling berurutan sehingga membawa riwayat (pod dingin atau hangat), dan generator beban berjalan di mesin yang sama dengan cluster kind.</li>
+<li><b>Kolom CPU, memory, dan network di <code>combined.csv</code> adalah rata-rata per pod,</b> bukan total, karena fungsi agregasi di collector merata-ratakan seri. Angka CPU total di dokumen ini dihitung ulang dari file per-pod di folder <code>metrics/</code>. Metrik <code>CPU_THROTTLED</code> tidak mengembalikan data pada run ini, jadi throttling tidak bisa dinilai.</li>
+<li><b>Replica per service dibaca dari Prometheus</b> (<code>kube_deployment_spec_replicas</code>) pada window tiap run, karena <code>metadata.json</code> tidak mencatatnya.</li>
+</ul>
+</div>
+
+</body>
+</html>
