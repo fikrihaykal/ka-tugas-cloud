@@ -1,0 +1,462 @@
+2026-11-02 07:37:50  plan start smoke=False phases=0,1,2,3 seed=20261102
+2026-11-02 07:37:50  === CELL p0-burst-flash-sale-r1 {"phase": 0, "profile": "burst-flash-sale", "setting": "S1", "rep": 1}
+2026-11-02 07:37:52  warm-up 120s at 10 RPS
+2026-11-02 07:39:48    | Experiment ID : burst-flash-sale-20261102T003948Z-r1
+2026-11-02 07:39:48    | Profile       : burst-flash-sale
+2026-11-02 07:39:48    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 07:39:48    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T003948Z-r1
+2026-11-02 07:39:48    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 07:39:48    | OK: target is reachable.
+2026-11-02 07:39:48    | Warm-up: 30s at 5 RPS
+2026-11-02 07:40:18    | Measurement starts: 1793580018
+2026-11-02 07:50:00    | Measurement ends: 1793580600
+2026-11-02 07:50:00    | Cool-down: 15s
+2026-11-02 07:50:14    | Completed: burst-flash-sale-20261102T003948Z-r1
+2026-11-02 07:50:14    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T003948Z-r1/measurement-window.env
+2026-11-02 07:50:35  cell p0-burst-flash-sale-r1 -> burst-flash-sale-20261102T003948Z-r1
+2026-11-02 07:50:54  === CELL p0-burst-flash-sale-10-400-r1 {"phase": 0, "profile": "burst-flash-sale-10-400", "setting": "S1", "rep": 1}
+2026-11-02 07:50:56  warm-up 120s at 10 RPS
+2026-11-02 07:52:52    | Experiment ID : burst-flash-sale-20261102T005252Z-r1
+2026-11-02 07:52:52    | Profile       : burst-flash-sale
+2026-11-02 07:52:52    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 07:52:52    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T005252Z-r1
+2026-11-02 07:52:52    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 07:52:52    | OK: target is reachable.
+2026-11-02 07:52:52    | Warm-up: 30s at 5 RPS
+2026-11-02 07:53:21    | Measurement starts: 1793580801
+2026-11-02 08:03:01    | Measurement ends: 1793581381
+2026-11-02 08:03:01    | Cool-down: 15s
+2026-11-02 08:03:16    | Completed: burst-flash-sale-20261102T005252Z-r1
+2026-11-02 08:03:16    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T005252Z-r1/measurement-window.env
+2026-11-02 08:03:36  cell p0-burst-flash-sale-10-400-r1 -> burst-flash-sale-20261102T005252Z-r1
+2026-11-02 08:03:56  === CELL p1-S1-r2 {"phase": 1, "setting": "S1", "tier_s": 60, "levels": [10, 25, 50, 100, 150, 200, 150, 100, 50, 25, 10]}
+2026-11-02 08:03:57  warm-up 120s at 10 RPS
+2026-11-02 08:05:52    | Experiment ID : step-20261102T010552Z-r2
+2026-11-02 08:05:52    | Profile       : step
+2026-11-02 08:05:52    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 08:05:52    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/step-20261102T010552Z-r2
+2026-11-02 08:05:52    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 08:05:52    | OK: target is reachable.
+2026-11-02 08:05:52    | Warm-up: 30s at 5 RPS
+2026-11-02 08:06:22    | Measurement starts: 1793581582
+2026-11-02 08:16:58    | Measurement ends: 1793582218
+2026-11-02 08:16:58    | Cool-down: 15s
+2026-11-02 08:17:12    | Completed: step-20261102T010552Z-r2
+2026-11-02 08:17:12    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/step-20261102T010552Z-r2/measurement-window.env
+2026-11-02 08:17:32  cell p1-S1-r2 -> step-20261102T010552Z-r2
+2026-11-02 08:17:51  === CELL p1-S3-r2 {"phase": 1, "setting": "S3", "tier_s": 60, "levels": [10, 25, 50, 100, 150, 200, 150, 100, 50, 25, 10]}
+2026-11-02 08:18:36  warm-up 120s at 10 RPS
+2026-11-02 08:20:31    | Experiment ID : step-20261102T012031Z-r2
+2026-11-02 08:20:31    | Profile       : step
+2026-11-02 08:20:31    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 08:20:31    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/step-20261102T012031Z-r2
+2026-11-02 08:20:31    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 08:20:31    | OK: target is reachable.
+2026-11-02 08:20:31    | Warm-up: 30s at 5 RPS
+2026-11-02 08:21:00    | Measurement starts: 1793582460
+2026-11-02 08:31:34    | Measurement ends: 1793583094
+2026-11-02 08:31:34    | Cool-down: 15s
+2026-11-02 08:31:48    | Completed: step-20261102T012031Z-r2
+2026-11-02 08:31:48    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/step-20261102T012031Z-r2/measurement-window.env
+2026-11-02 08:32:09  cell p1-S3-r2 -> step-20261102T012031Z-r2
+2026-11-02 08:32:28  === CELL p1-S2-r1 {"phase": 1, "setting": "S2", "tier_s": 60, "levels": [10, 25, 50, 100, 150, 200, 150, 100, 50, 25, 10]}
+2026-11-02 08:32:29  warm-up 120s at 10 RPS
+2026-11-02 08:34:25    | Experiment ID : step-20261102T013425Z-r1
+2026-11-02 08:34:25    | Profile       : step
+2026-11-02 08:34:25    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 08:34:25    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/step-20261102T013425Z-r1
+2026-11-02 08:34:25    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 08:34:25    | OK: target is reachable.
+2026-11-02 08:34:25    | Warm-up: 30s at 5 RPS
+2026-11-02 08:34:54    | Measurement starts: 1793583294
+2026-11-02 08:45:25    | Measurement ends: 1793583925
+2026-11-02 08:45:25    | Cool-down: 15s
+2026-11-02 08:45:40    | Completed: step-20261102T013425Z-r1
+2026-11-02 08:45:40    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/step-20261102T013425Z-r1/measurement-window.env
+2026-11-02 08:46:00  cell p1-S2-r1 -> step-20261102T013425Z-r1
+2026-11-02 08:46:20  === CELL p1-S2-r2 {"phase": 1, "setting": "S2", "tier_s": 60, "levels": [10, 25, 50, 100, 150, 200, 150, 100, 50, 25, 10]}
+2026-11-02 08:46:21  warm-up 120s at 10 RPS
+2026-11-02 08:48:15    | Experiment ID : step-20261102T014815Z-r2
+2026-11-02 08:48:15    | Profile       : step
+2026-11-02 08:48:15    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 08:48:15    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/step-20261102T014815Z-r2
+2026-11-02 08:48:15    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 08:48:15    | OK: target is reachable.
+2026-11-02 08:48:15    | Warm-up: 30s at 5 RPS
+2026-11-02 08:48:44    | Measurement starts: 1793584124
+2026-11-02 08:59:15    | Measurement ends: 1793584755
+2026-11-02 08:59:15    | Cool-down: 15s
+2026-11-02 08:59:30    | Completed: step-20261102T014815Z-r2
+2026-11-02 08:59:30    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/step-20261102T014815Z-r2/measurement-window.env
+2026-11-02 08:59:49  cell p1-S2-r2 -> step-20261102T014815Z-r2
+2026-11-02 09:00:08  === CELL p1-S1-r1 {"phase": 1, "setting": "S1", "tier_s": 60, "levels": [10, 25, 50, 100, 150, 200, 150, 100, 50, 25, 10]}
+2026-11-02 09:00:09  warm-up 120s at 10 RPS
+2026-11-02 09:02:05    | Experiment ID : step-20261102T020205Z-r1
+2026-11-02 09:02:05    | Profile       : step
+2026-11-02 09:02:05    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 09:02:05    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/step-20261102T020205Z-r1
+2026-11-02 09:02:05    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 09:02:05    | OK: target is reachable.
+2026-11-02 09:02:05    | Warm-up: 30s at 5 RPS
+2026-11-02 09:02:34    | Measurement starts: 1793584954
+2026-11-02 09:13:03    | Measurement ends: 1793585583
+2026-11-02 09:13:03    | Cool-down: 15s
+2026-11-02 09:13:16    | Completed: step-20261102T020205Z-r1
+2026-11-02 09:13:16    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/step-20261102T020205Z-r1/measurement-window.env
+2026-11-02 09:13:37  cell p1-S1-r1 -> step-20261102T020205Z-r1
+2026-11-02 09:13:56  === CELL p1-S3-r1 {"phase": 1, "setting": "S3", "tier_s": 60, "levels": [10, 25, 50, 100, 150, 200, 150, 100, 50, 25, 10]}
+2026-11-02 09:14:41  warm-up 120s at 10 RPS
+2026-11-02 09:16:34    | Experiment ID : step-20261102T021634Z-r1
+2026-11-02 09:16:34    | Profile       : step
+2026-11-02 09:16:34    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 09:16:34    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/step-20261102T021634Z-r1
+2026-11-02 09:16:34    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 09:16:34    | OK: target is reachable.
+2026-11-02 09:16:34    | Warm-up: 30s at 5 RPS
+2026-11-02 09:17:03    | Measurement starts: 1793585823
+2026-11-02 09:27:29    | Measurement ends: 1793586449
+2026-11-02 09:27:29    | Cool-down: 15s
+2026-11-02 09:27:44    | Completed: step-20261102T021634Z-r1
+2026-11-02 09:27:44    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/step-20261102T021634Z-r1/measurement-window.env
+2026-11-02 09:28:04  cell p1-S3-r1 -> step-20261102T021634Z-r1
+2026-11-02 09:28:22  PHASE 1 done. capacity={"S1": {"capacity_up": [50, 50], "recovered_level_down": [50, 50]}, "S2": {"capacity_up": [200, 200], "recovered_level_down": [150, 150]}, "S3": {"capacity_up": [150, 150], "recovered_level_down": [150, 150]}} -> L0=50
+2026-11-02 09:28:22  === CELL p2-S1-4x-r3 {"phase": 2, "setting": "S1", "mult": 4, "L0": 50, "cold": false, "rep": 3, "burst_start": 120, "burst_s": 60}
+2026-11-02 09:28:24  warm-up 120s at 25 RPS
+2026-11-02 09:30:18    | Experiment ID : burst-flash-sale-20261102T023018Z-r3
+2026-11-02 09:30:18    | Profile       : burst-flash-sale
+2026-11-02 09:30:18    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 09:30:18    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T023018Z-r3
+2026-11-02 09:30:18    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 09:30:18    | OK: target is reachable.
+2026-11-02 09:30:18    | Warm-up: 30s at 5 RPS
+2026-11-02 09:30:47    | Measurement starts: 1793586647
+2026-11-02 09:40:16    | Measurement ends: 1793587216
+2026-11-02 09:40:16    | Cool-down: 15s
+2026-11-02 09:40:31    | Completed: burst-flash-sale-20261102T023018Z-r3
+2026-11-02 09:40:31    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T023018Z-r3/measurement-window.env
+2026-11-02 09:40:50  cell p2-S1-4x-r3 -> burst-flash-sale-20261102T023018Z-r3
+2026-11-02 09:41:10  === CELL p2-S3-4x-r2 {"phase": 2, "setting": "S3", "mult": 4, "L0": 50, "cold": false, "rep": 2, "burst_start": 120, "burst_s": 60}
+2026-11-02 09:41:41  warm-up 120s at 25 RPS
+2026-11-02 09:43:34    | Experiment ID : burst-flash-sale-20261102T024334Z-r2
+2026-11-02 09:43:34    | Profile       : burst-flash-sale
+2026-11-02 09:43:34    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 09:43:34    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T024334Z-r2
+2026-11-02 09:43:34    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 09:43:34    | OK: target is reachable.
+2026-11-02 09:43:34    | Warm-up: 30s at 5 RPS
+2026-11-02 09:44:02    | Measurement starts: 1793587442
+2026-11-02 09:53:28    | Measurement ends: 1793588008
+2026-11-02 09:53:28    | Cool-down: 15s
+2026-11-02 09:53:43    | Completed: burst-flash-sale-20261102T024334Z-r2
+2026-11-02 09:53:43    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T024334Z-r2/measurement-window.env
+2026-11-02 09:54:03  cell p2-S3-4x-r2 -> burst-flash-sale-20261102T024334Z-r2
+2026-11-02 09:54:23  === CELL p2-S3-4x-r1 {"phase": 2, "setting": "S3", "mult": 4, "L0": 50, "cold": false, "rep": 1, "burst_start": 120, "burst_s": 60}
+2026-11-02 09:54:24  warm-up 120s at 25 RPS
+2026-11-02 09:56:17    | Experiment ID : burst-flash-sale-20261102T025617Z-r1
+2026-11-02 09:56:17    | Profile       : burst-flash-sale
+2026-11-02 09:56:17    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 09:56:17    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T025617Z-r1
+2026-11-02 09:56:17    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 09:56:17    | OK: target is reachable.
+2026-11-02 09:56:17    | Warm-up: 30s at 5 RPS
+2026-11-02 09:56:45    | Measurement starts: 1793588205
+2026-11-02 10:06:18    | Measurement ends: 1793588778
+2026-11-02 10:06:18    | Cool-down: 15s
+2026-11-02 10:06:33    | Completed: burst-flash-sale-20261102T025617Z-r1
+2026-11-02 10:06:33    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T025617Z-r1/measurement-window.env
+2026-11-02 10:06:54  cell p2-S3-4x-r1 -> burst-flash-sale-20261102T025617Z-r1
+2026-11-02 10:07:13  === CELL p2-S1-4x-r2 {"phase": 2, "setting": "S1", "mult": 4, "L0": 50, "cold": false, "rep": 2, "burst_start": 120, "burst_s": 60}
+2026-11-02 10:07:15  warm-up 120s at 25 RPS
+2026-11-02 10:09:13    | Experiment ID : burst-flash-sale-20261102T030913Z-r2
+2026-11-02 10:09:13    | Profile       : burst-flash-sale
+2026-11-02 10:09:13    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 10:09:13    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T030913Z-r2
+2026-11-02 10:09:13    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 10:09:13    | OK: target is reachable.
+2026-11-02 10:09:13    | Warm-up: 30s at 5 RPS
+2026-11-02 10:09:43    | Measurement starts: 1793588983
+2026-11-02 10:19:44    | Measurement ends: 1793589584
+2026-11-02 10:19:44    | Cool-down: 15s
+2026-11-02 10:19:59    | Completed: burst-flash-sale-20261102T030913Z-r2
+2026-11-02 10:19:59    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T030913Z-r2/measurement-window.env
+2026-11-02 10:20:19  cell p2-S1-4x-r2 -> burst-flash-sale-20261102T030913Z-r2
+2026-11-02 10:20:39  === CELL p2-S1-4x-r1 {"phase": 2, "setting": "S1", "mult": 4, "L0": 50, "cold": false, "rep": 1, "burst_start": 120, "burst_s": 60}
+2026-11-02 10:20:41  warm-up 120s at 25 RPS
+2026-11-02 10:22:41    | Experiment ID : burst-flash-sale-20261102T032241Z-r1
+2026-11-02 10:22:41    | Profile       : burst-flash-sale
+2026-11-02 10:22:41    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 10:22:41    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T032241Z-r1
+2026-11-02 10:22:41    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 10:22:41    | OK: target is reachable.
+2026-11-02 10:22:41    | Warm-up: 30s at 5 RPS
+2026-11-02 10:23:11    | Measurement starts: 1793589791
+2026-11-02 10:33:11    | Measurement ends: 1793590391
+2026-11-02 10:33:11    | Cool-down: 15s
+2026-11-02 10:33:26    | Completed: burst-flash-sale-20261102T032241Z-r1
+2026-11-02 10:33:26    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T032241Z-r1/measurement-window.env
+2026-11-02 10:33:47  cell p2-S1-4x-r1 -> burst-flash-sale-20261102T032241Z-r1
+2026-11-02 10:34:07  === CELL p2-S2-4x-r2 {"phase": 2, "setting": "S2", "mult": 4, "L0": 50, "cold": false, "rep": 2, "burst_start": 120, "burst_s": 60}
+2026-11-02 10:34:53  warm-up 120s at 25 RPS
+2026-11-02 10:36:53    | Experiment ID : burst-flash-sale-20261102T033653Z-r2
+2026-11-02 10:36:53    | Profile       : burst-flash-sale
+2026-11-02 10:36:53    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 10:36:53    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T033653Z-r2
+2026-11-02 10:36:53    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 10:36:53    | OK: target is reachable.
+2026-11-02 10:36:53    | Warm-up: 30s at 5 RPS
+2026-11-02 10:37:23    | Measurement starts: 1793590643
+2026-11-02 10:47:23    | Measurement ends: 1793591243
+2026-11-02 10:47:23    | Cool-down: 15s
+2026-11-02 10:47:38    | Completed: burst-flash-sale-20261102T033653Z-r2
+2026-11-02 10:47:38    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T033653Z-r2/measurement-window.env
+2026-11-02 10:48:00  cell p2-S2-4x-r2 -> burst-flash-sale-20261102T033653Z-r2
+2026-11-02 10:48:20  === CELL p2-S2-4x-cold-r1 {"phase": 2, "setting": "S2", "mult": 4, "L0": 50, "cold": true, "rep": 1, "burst_start": 120, "burst_s": 60}
+2026-11-02 10:49:08    | Experiment ID : burst-flash-sale-20261102T034908Z-r1
+2026-11-02 10:49:08    | Profile       : burst-flash-sale
+2026-11-02 10:49:08    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 10:49:08    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T034908Z-r1
+2026-11-02 10:49:08    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 10:49:09    | OK: target is reachable.
+2026-11-02 10:49:09    | Warm-up: 1s at 5 RPS
+2026-11-02 10:49:10    | Measurement starts: 1793591350
+2026-11-02 10:59:10    | Measurement ends: 1793591950
+2026-11-02 10:59:10    | Cool-down: 15s
+2026-11-02 10:59:25    | Completed: burst-flash-sale-20261102T034908Z-r1
+2026-11-02 10:59:25    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T034908Z-r1/measurement-window.env
+2026-11-02 10:59:47  cell p2-S2-4x-cold-r1 -> burst-flash-sale-20261102T034908Z-r1
+2026-11-02 11:00:07  === CELL p2-S3-4x-r3 {"phase": 2, "setting": "S3", "mult": 4, "L0": 50, "cold": false, "rep": 3, "burst_start": 120, "burst_s": 60}
+2026-11-02 11:00:53  warm-up 120s at 25 RPS
+2026-11-02 11:02:53    | Experiment ID : burst-flash-sale-20261102T040253Z-r3
+2026-11-02 11:02:53    | Profile       : burst-flash-sale
+2026-11-02 11:02:53    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 11:02:53    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T040253Z-r3
+2026-11-02 11:02:53    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 11:02:53    | OK: target is reachable.
+2026-11-02 11:02:53    | Warm-up: 30s at 5 RPS
+2026-11-02 11:03:23    | Measurement starts: 1793592203
+2026-11-02 11:13:21    | Measurement ends: 1793592801
+2026-11-02 11:13:21    | Cool-down: 15s
+2026-11-02 11:13:35    | Completed: burst-flash-sale-20261102T040253Z-r3
+2026-11-02 11:13:35    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T040253Z-r3/measurement-window.env
+2026-11-02 11:13:57  cell p2-S3-4x-r3 -> burst-flash-sale-20261102T040253Z-r3
+2026-11-02 11:14:16  === CELL p2-S2-4x-r3 {"phase": 2, "setting": "S2", "mult": 4, "L0": 50, "cold": false, "rep": 3, "burst_start": 120, "burst_s": 60}
+2026-11-02 11:14:18  warm-up 120s at 25 RPS
+2026-11-02 11:16:16    | Experiment ID : burst-flash-sale-20261102T041616Z-r3
+2026-11-02 11:16:16    | Profile       : burst-flash-sale
+2026-11-02 11:16:16    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 11:16:16    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T041616Z-r3
+2026-11-02 11:16:16    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 11:16:16    | OK: target is reachable.
+2026-11-02 11:16:16    | Warm-up: 30s at 5 RPS
+2026-11-02 11:16:45    | Measurement starts: 1793593005
+2026-11-02 11:26:36    | Measurement ends: 1793593596
+2026-11-02 11:26:36    | Cool-down: 15s
+2026-11-02 11:26:50    | Completed: burst-flash-sale-20261102T041616Z-r3
+2026-11-02 11:26:50    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T041616Z-r3/measurement-window.env
+2026-11-02 11:27:11  cell p2-S2-4x-r3 -> burst-flash-sale-20261102T041616Z-r3
+2026-11-02 11:27:31  === CELL p2-S2-4x-r1 {"phase": 2, "setting": "S2", "mult": 4, "L0": 50, "cold": false, "rep": 1, "burst_start": 120, "burst_s": 60}
+2026-11-02 11:27:32  warm-up 120s at 25 RPS
+2026-11-02 11:29:29    | Experiment ID : burst-flash-sale-20261102T042929Z-r1
+2026-11-02 11:29:29    | Profile       : burst-flash-sale
+2026-11-02 11:29:29    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 11:29:29    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T042929Z-r1
+2026-11-02 11:29:29    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 11:29:29    | OK: target is reachable.
+2026-11-02 11:29:29    | Warm-up: 30s at 5 RPS
+2026-11-02 11:29:59    | Measurement starts: 1793593799
+2026-11-02 11:39:47    | Measurement ends: 1793594387
+2026-11-02 11:39:47    | Cool-down: 15s
+2026-11-02 11:40:02    | Completed: burst-flash-sale-20261102T042929Z-r1
+2026-11-02 11:40:02    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T042929Z-r1/measurement-window.env
+2026-11-02 11:40:22  cell p2-S2-4x-r1 -> burst-flash-sale-20261102T042929Z-r1
+2026-11-02 11:40:42  === CELL p2-S2-4x-cold-r2 {"phase": 2, "setting": "S2", "mult": 4, "L0": 50, "cold": true, "rep": 2, "burst_start": 120, "burst_s": 60}
+2026-11-02 11:41:29    | Experiment ID : burst-flash-sale-20261102T044129Z-r2
+2026-11-02 11:41:29    | Profile       : burst-flash-sale
+2026-11-02 11:41:29    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 11:41:29    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T044129Z-r2
+2026-11-02 11:41:29    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 11:41:30    | OK: target is reachable.
+2026-11-02 11:41:30    | Warm-up: 1s at 5 RPS
+2026-11-02 11:41:31    | Measurement starts: 1793594491
+2026-11-02 11:51:18    | Measurement ends: 1793595078
+2026-11-02 11:51:18    | Cool-down: 15s
+2026-11-02 11:51:32    | Completed: burst-flash-sale-20261102T044129Z-r2
+2026-11-02 11:51:32    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T044129Z-r2/measurement-window.env
+2026-11-02 11:51:53  cell p2-S2-4x-cold-r2 -> burst-flash-sale-20261102T044129Z-r2
+2026-11-02 11:52:13  === CELL p2-S2-4x-cold-r3 {"phase": 2, "setting": "S2", "mult": 4, "L0": 50, "cold": true, "rep": 3, "burst_start": 120, "burst_s": 60}
+2026-11-02 11:53:00    | Experiment ID : burst-flash-sale-20261102T045300Z-r3
+2026-11-02 11:53:00    | Profile       : burst-flash-sale
+2026-11-02 11:53:00    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 11:53:00    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T045300Z-r3
+2026-11-02 11:53:00    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 11:53:00    | OK: target is reachable.
+2026-11-02 11:53:00    | Warm-up: 1s at 5 RPS
+2026-11-02 11:53:01    | Measurement starts: 1793595181
+2026-11-02 12:02:46    | Measurement ends: 1793595766
+2026-11-02 12:02:46    | Cool-down: 15s
+2026-11-02 12:03:00    | Completed: burst-flash-sale-20261102T045300Z-r3
+2026-11-02 12:03:00    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T045300Z-r3/measurement-window.env
+2026-11-02 12:03:21  cell p2-S2-4x-cold-r3 -> burst-flash-sale-20261102T045300Z-r3
+2026-11-02 12:03:40  PHASE 3: base=S1, burst 4x L0=50, target setting S3
+2026-11-02 12:03:40  SKIPPED hpa-cpu (needs metrics-server; run with --allow-install)
+2026-11-02 12:03:40  SKIPPED keda-rps (needs KEDA; run with --allow-install)
+2026-11-02 12:03:40  === CELL p3-prescale-r3 {"phase": 3, "strategy": "prescale", "setting": "S1", "target": "S3", "mult": 4, "L0": 50, "rep": 3, "burst_start": 240, "burst_s": 60}
+2026-11-02 12:03:42  warm-up 120s at 25 RPS
+2026-11-02 12:05:38    | Experiment ID : burst-flash-sale-20261102T050538Z-r3
+2026-11-02 12:05:38    | Profile       : burst-flash-sale
+2026-11-02 12:05:38    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 12:05:38    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T050538Z-r3
+2026-11-02 12:05:38    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 12:05:38    | OK: target is reachable.
+2026-11-02 12:05:38    | Warm-up: 30s at 5 RPS
+2026-11-02 12:06:07    | Measurement starts: 1793595967
+2026-11-02 12:09:02  scheduled pre-scale to S3 (60s before burst)
+2026-11-02 12:17:46    | Measurement ends: 1793596666
+2026-11-02 12:17:46    | Cool-down: 15s
+2026-11-02 12:18:01    | Completed: burst-flash-sale-20261102T050538Z-r3
+2026-11-02 12:18:01    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T050538Z-r3/measurement-window.env
+2026-11-02 12:18:22  cell p3-prescale-r3 -> burst-flash-sale-20261102T050538Z-r3
+2026-11-02 12:18:43  === CELL p3-prescale-warm-r1 {"phase": 3, "strategy": "prescale-warm", "setting": "S1", "target": "S3", "mult": 4, "L0": 50, "rep": 1, "burst_start": 240, "burst_s": 60}
+2026-11-02 12:18:43  warm-up 120s at 25 RPS
+2026-11-02 12:20:40    | Experiment ID : burst-flash-sale-20261102T052040Z-r1
+2026-11-02 12:20:40    | Profile       : burst-flash-sale
+2026-11-02 12:20:40    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 12:20:40    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T052040Z-r1
+2026-11-02 12:20:40    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 12:20:40    | OK: target is reachable.
+2026-11-02 12:20:40    | Warm-up: 30s at 5 RPS
+2026-11-02 12:21:09    | Measurement starts: 1793596869
+2026-11-02 12:22:06  scheduled pre-scale to S3 (180s before burst)
+2026-11-02 12:32:46    | Measurement ends: 1793597566
+2026-11-02 12:32:46    | Cool-down: 15s
+2026-11-02 12:33:00    | Completed: burst-flash-sale-20261102T052040Z-r1
+2026-11-02 12:33:00    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T052040Z-r1/measurement-window.env
+2026-11-02 12:33:21  cell p3-prescale-warm-r1 -> burst-flash-sale-20261102T052040Z-r1
+2026-11-02 12:33:41  === CELL p3-prescale-warm-r2 {"phase": 3, "strategy": "prescale-warm", "setting": "S1", "target": "S3", "mult": 4, "L0": 50, "rep": 2, "burst_start": 240, "burst_s": 60}
+2026-11-02 12:33:42  warm-up 120s at 25 RPS
+2026-11-02 12:35:39    | Experiment ID : burst-flash-sale-20261102T053539Z-r2
+2026-11-02 12:35:39    | Profile       : burst-flash-sale
+2026-11-02 12:35:39    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 12:35:39    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T053539Z-r2
+2026-11-02 12:35:39    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 12:35:39    | OK: target is reachable.
+2026-11-02 12:35:39    | Warm-up: 30s at 5 RPS
+2026-11-02 12:36:08    | Measurement starts: 1793597768
+2026-11-02 12:37:05  scheduled pre-scale to S3 (180s before burst)
+2026-11-02 12:47:43    | Measurement ends: 1793598463
+2026-11-02 12:47:43    | Cool-down: 15s
+2026-11-02 12:47:57    | Completed: burst-flash-sale-20261102T053539Z-r2
+2026-11-02 12:47:57    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T053539Z-r2/measurement-window.env
+2026-11-02 12:48:17  cell p3-prescale-warm-r2 -> burst-flash-sale-20261102T053539Z-r2
+2026-11-02 12:48:38  === CELL p3-prescale-r1 {"phase": 3, "strategy": "prescale", "setting": "S1", "target": "S3", "mult": 4, "L0": 50, "rep": 1, "burst_start": 240, "burst_s": 60}
+2026-11-02 12:48:40  warm-up 120s at 25 RPS
+2026-11-02 12:50:36    | Experiment ID : burst-flash-sale-20261102T055036Z-r1
+2026-11-02 12:50:36    | Profile       : burst-flash-sale
+2026-11-02 12:50:36    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 12:50:36    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T055036Z-r1
+2026-11-02 12:50:36    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 12:50:36    | OK: target is reachable.
+2026-11-02 12:50:36    | Warm-up: 30s at 5 RPS
+2026-11-02 12:51:04    | Measurement starts: 1793598664
+2026-11-02 12:53:57  scheduled pre-scale to S3 (60s before burst)
+2026-11-02 13:02:37    | Measurement ends: 1793599357
+2026-11-02 13:02:37    | Cool-down: 15s
+2026-11-02 13:02:52    | Completed: burst-flash-sale-20261102T055036Z-r1
+2026-11-02 13:02:52    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T055036Z-r1/measurement-window.env
+2026-11-02 13:03:12  cell p3-prescale-r1 -> burst-flash-sale-20261102T055036Z-r1
+2026-11-02 13:03:32  === CELL p3-prescale-warm-r3 {"phase": 3, "strategy": "prescale-warm", "setting": "S1", "target": "S3", "mult": 4, "L0": 50, "rep": 3, "burst_start": 240, "burst_s": 60}
+2026-11-02 13:03:34  warm-up 120s at 25 RPS
+2026-11-02 13:05:29    | Experiment ID : burst-flash-sale-20261102T060529Z-r3
+2026-11-02 13:05:29    | Profile       : burst-flash-sale
+2026-11-02 13:05:29    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 13:05:29    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T060529Z-r3
+2026-11-02 13:05:29    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 13:05:29    | OK: target is reachable.
+2026-11-02 13:05:29    | Warm-up: 30s at 5 RPS
+2026-11-02 13:05:59    | Measurement starts: 1793599559
+2026-11-02 13:06:56  scheduled pre-scale to S3 (180s before burst)
+2026-11-02 13:17:27    | Measurement ends: 1793600247
+2026-11-02 13:17:27    | Cool-down: 15s
+2026-11-02 13:17:42    | Completed: burst-flash-sale-20261102T060529Z-r3
+2026-11-02 13:17:42    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T060529Z-r3/measurement-window.env
+2026-11-02 13:18:02  cell p3-prescale-warm-r3 -> burst-flash-sale-20261102T060529Z-r3
+2026-11-02 13:18:23  === CELL p3-prescale-r2 {"phase": 3, "strategy": "prescale", "setting": "S1", "target": "S3", "mult": 4, "L0": 50, "rep": 2, "burst_start": 240, "burst_s": 60}
+2026-11-02 13:18:25  warm-up 120s at 25 RPS
+2026-11-02 13:20:19    | Experiment ID : burst-flash-sale-20261102T062019Z-r2
+2026-11-02 13:20:19    | Profile       : burst-flash-sale
+2026-11-02 13:20:19    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 13:20:19    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T062019Z-r2
+2026-11-02 13:20:19    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 13:20:19    | OK: target is reachable.
+2026-11-02 13:20:19    | Warm-up: 30s at 5 RPS
+2026-11-02 13:20:48    | Measurement starts: 1793600448
+2026-11-02 13:23:39  scheduled pre-scale to S3 (60s before burst)
+2026-11-02 13:32:16    | Measurement ends: 1793601136
+2026-11-02 13:32:16    | Cool-down: 15s
+2026-11-02 13:32:30    | Completed: burst-flash-sale-20261102T062019Z-r2
+2026-11-02 13:32:30    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T062019Z-r2/measurement-window.env
+2026-11-02 13:32:51  cell p3-prescale-r2 -> burst-flash-sale-20261102T062019Z-r2
+2026-11-02 13:33:11  ALL DONE. done=26 failed=0 summary=/home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/_plan/summary.csv
+2026-11-02 13:37:01  plan start smoke=False phases=3 seed=20261102
+2026-11-02 13:37:02  PHASE 3: base=S1, burst 4x L0=50, target setting S3
+2026-11-02 13:38:56  plan start smoke=False phases=3 seed=20261102
+2026-11-02 13:38:57  PHASE 3: base=S1, burst 4x L0=50, target setting S3
+2026-11-02 13:40:01  plan start smoke=False phases=3 seed=20261102
+2026-11-02 13:40:02  PHASE 3: base=S1, burst 4x L0=50, target setting S3
+2026-11-02 13:40:02  installing metrics-server
+2026-11-02 13:41:29  installing KEDA
+2026-11-02 13:41:29  KEDA install failed: command failed (127): helm repo add kedacore https://kedacore.github.io/charts && helm repo update
+
+2026-11-02 13:41:29  SKIPPED keda-rps (needs KEDA; run with --allow-install)
+2026-11-02 13:41:29  skip p3-prescale-r2 (done)
+2026-11-02 13:41:29  skip p3-prescale-warm-r3 (done)
+2026-11-02 13:41:29  === CELL p3-hpa-cpu-r2 {"phase": 3, "strategy": "hpa-cpu", "setting": "S1", "target": "S3", "mult": 4, "L0": 50, "rep": 2, "burst_start": 240, "burst_s": 60}
+2026-11-02 13:41:34  warm-up 120s at 25 RPS
+2026-11-02 13:43:27    | Experiment ID : burst-flash-sale-20261102T064327Z-r2
+2026-11-02 13:43:27    | Profile       : burst-flash-sale
+2026-11-02 13:43:27    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 13:43:27    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T064327Z-r2
+2026-11-02 13:43:27    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 13:43:27    | OK: target is reachable.
+2026-11-02 13:43:27    | Warm-up: 30s at 5 RPS
+2026-11-02 13:43:56    | Measurement starts: 1793601836
+2026-11-02 13:55:21    | Measurement ends: 1793602521
+2026-11-02 13:55:21    | Cool-down: 15s
+2026-11-02 13:55:36    | Completed: burst-flash-sale-20261102T064327Z-r2
+2026-11-02 13:55:36    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T064327Z-r2/measurement-window.env
+2026-11-02 13:55:56  cell p3-hpa-cpu-r2 -> burst-flash-sale-20261102T064327Z-r2
+2026-11-02 13:56:17  skip p3-prescale-warm-r1 (done)
+2026-11-02 13:56:17  skip p3-prescale-r1 (done)
+2026-11-02 13:56:17  skip p3-prescale-warm-r2 (done)
+2026-11-02 13:56:17  === CELL p3-hpa-cpu-r1 {"phase": 3, "strategy": "hpa-cpu", "setting": "S1", "target": "S3", "mult": 4, "L0": 50, "rep": 1, "burst_start": 240, "burst_s": 60}
+2026-11-02 13:56:21  warm-up 120s at 25 RPS
+2026-11-02 13:58:16    | Experiment ID : burst-flash-sale-20261102T065816Z-r1
+2026-11-02 13:58:16    | Profile       : burst-flash-sale
+2026-11-02 13:58:16    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 13:58:16    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T065816Z-r1
+2026-11-02 13:58:16    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 13:58:16    | OK: target is reachable.
+2026-11-02 13:58:16    | Warm-up: 30s at 5 RPS
+2026-11-02 13:58:46    | Measurement starts: 1793602726
+2026-11-02 14:10:17    | Measurement ends: 1793603417
+2026-11-02 14:10:17    | Cool-down: 15s
+2026-11-02 14:10:32    | Completed: burst-flash-sale-20261102T065816Z-r1
+2026-11-02 14:10:32    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T065816Z-r1/measurement-window.env
+2026-11-02 14:10:51  cell p3-hpa-cpu-r1 -> burst-flash-sale-20261102T065816Z-r1
+2026-11-02 14:11:14  === CELL p3-hpa-cpu-r3 {"phase": 3, "strategy": "hpa-cpu", "setting": "S1", "target": "S3", "mult": 4, "L0": 50, "rep": 3, "burst_start": 240, "burst_s": 60}
+2026-11-02 14:11:16  warm-up 120s at 25 RPS
+2026-11-02 14:13:12    | Experiment ID : burst-flash-sale-20261102T071312Z-r3
+2026-11-02 14:13:12    | Profile       : burst-flash-sale
+2026-11-02 14:13:12    | Target        : http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 14:13:12    | Result        : /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T071312Z-r3
+2026-11-02 14:13:12    | Target: http://online-boutique.127.0.0.1.sslip.io/
+2026-11-02 14:13:12    | OK: target is reachable.
+2026-11-02 14:13:12    | Warm-up: 30s at 5 RPS
+2026-11-02 14:13:41    | Measurement starts: 1793603621
+2026-11-02 14:25:06    | Measurement ends: 1793604306
+2026-11-02 14:25:06    | Cool-down: 15s
+2026-11-02 14:25:19    | Completed: burst-flash-sale-20261102T071312Z-r3
+2026-11-02 14:25:19    | Measurement window: /home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/burst-flash-sale-20261102T071312Z-r3/measurement-window.env
+2026-11-02 14:25:40  cell p3-hpa-cpu-r3 -> burst-flash-sale-20261102T071312Z-r3
+2026-11-02 14:26:01  skip p3-prescale-r3 (done)
+2026-11-02 14:26:01  ALL DONE. done=29 failed=0 summary=/home/fikri/project/ka-tugas-cloud/kubernetes/research/cloud-dynamics-experiments/results/_plan/summary.csv

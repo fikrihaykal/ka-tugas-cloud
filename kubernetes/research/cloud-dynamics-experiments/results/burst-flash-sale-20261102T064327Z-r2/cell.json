@@ -1,0 +1,12 @@
+{
+  "cell": "p3-hpa-cpu-r2",
+  "phase": 3,
+  "strategy": "hpa-cpu",
+  "setting": "S1",
+  "target": "S3",
+  "mult": 4,
+  "L0": 50,
+  "rep": 2,
+  "burst_start": 240,
+  "burst_s": 60
+}

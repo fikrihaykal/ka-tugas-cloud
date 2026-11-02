@@ -1,0 +1,25 @@
+{
+  "experiment_id": "burst-flash-sale-20261102T044129Z-r2",
+  "profile": "burst-flash-sale",
+  "target_url": "http://online-boutique.127.0.0.1.sslip.io/",
+  "host_ip": "127.0.0.1",
+  "measurement_start_epoch": 1793594491,
+  "measurement_end_epoch": 1793595078,
+  "sample_interval_seconds": 1.0,
+  "warmup_seconds": 1,
+  "cooldown_seconds": 15,
+  "replicate": 2,
+  "application": {
+    "name": "online-boutique",
+    "architecture": "online-boutique",
+    "replicas": "S2:adservice=3,cartservice=4,checkoutservice=1,currencyservice=10,emailservice=1,frontend=8,paymentservice=1,productcatalogservice=5,recommendationservice=1,redis-cart=1,shippingservice=1",
+    "cpu_request": "unspecified",
+    "cpu_limit": "unspecified",
+    "memory_request": "unspecified",
+    "memory_limit": "unspecified"
+  },
+  "runtime": {
+    "python": "3.12.3",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39"
+  }
+}

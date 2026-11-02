@@ -1,0 +1,12 @@
+{
+  "cell": "p3-prescale-warm-r1",
+  "phase": 3,
+  "strategy": "prescale-warm",
+  "setting": "S1",
+  "target": "S3",
+  "mult": 4,
+  "L0": 50,
+  "rep": 1,
+  "burst_start": 240,
+  "burst_s": 60
+}

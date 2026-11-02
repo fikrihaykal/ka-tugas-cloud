@@ -1,0 +1,11 @@
+{
+  "cell": "p2-S2-4x-cold-r1",
+  "phase": 2,
+  "setting": "S2",
+  "mult": 4,
+  "L0": 50,
+  "cold": true,
+  "rep": 1,
+  "burst_start": 120,
+  "burst_s": 60
+}

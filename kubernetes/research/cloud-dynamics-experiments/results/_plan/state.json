@@ -1,0 +1,67 @@
+{
+  "done": {
+    "p0-burst-flash-sale-r1": "burst-flash-sale-20261102T003948Z-r1",
+    "p0-burst-flash-sale-10-400-r1": "burst-flash-sale-20261102T005252Z-r1",
+    "p1-S1-r2": "step-20261102T010552Z-r2",
+    "p1-S3-r2": "step-20261102T012031Z-r2",
+    "p1-S2-r1": "step-20261102T013425Z-r1",
+    "p1-S2-r2": "step-20261102T014815Z-r2",
+    "p1-S1-r1": "step-20261102T020205Z-r1",
+    "p1-S3-r1": "step-20261102T021634Z-r1",
+    "p2-S1-4x-r3": "burst-flash-sale-20261102T023018Z-r3",
+    "p2-S3-4x-r2": "burst-flash-sale-20261102T024334Z-r2",
+    "p2-S3-4x-r1": "burst-flash-sale-20261102T025617Z-r1",
+    "p2-S1-4x-r2": "burst-flash-sale-20261102T030913Z-r2",
+    "p2-S1-4x-r1": "burst-flash-sale-20261102T032241Z-r1",
+    "p2-S2-4x-r2": "burst-flash-sale-20261102T033653Z-r2",
+    "p2-S2-4x-cold-r1": "burst-flash-sale-20261102T034908Z-r1",
+    "p2-S3-4x-r3": "burst-flash-sale-20261102T040253Z-r3",
+    "p2-S2-4x-r3": "burst-flash-sale-20261102T041616Z-r3",
+    "p2-S2-4x-r1": "burst-flash-sale-20261102T042929Z-r1",
+    "p2-S2-4x-cold-r2": "burst-flash-sale-20261102T044129Z-r2",
+    "p2-S2-4x-cold-r3": "burst-flash-sale-20261102T045300Z-r3",
+    "p3-prescale-r3": "burst-flash-sale-20261102T050538Z-r3",
+    "p3-prescale-warm-r1": "burst-flash-sale-20261102T052040Z-r1",
+    "p3-prescale-warm-r2": "burst-flash-sale-20261102T053539Z-r2",
+    "p3-prescale-r1": "burst-flash-sale-20261102T055036Z-r1",
+    "p3-prescale-warm-r3": "burst-flash-sale-20261102T060529Z-r3",
+    "p3-prescale-r2": "burst-flash-sale-20261102T062019Z-r2",
+    "p3-hpa-cpu-r2": "burst-flash-sale-20261102T064327Z-r2",
+    "p3-hpa-cpu-r1": "burst-flash-sale-20261102T065816Z-r1",
+    "p3-hpa-cpu-r3": "burst-flash-sale-20261102T071312Z-r3"
+  },
+  "capacity": {
+    "S1": {
+      "capacity_up": [
+        50,
+        50
+      ],
+      "recovered_level_down": [
+        50,
+        50
+      ]
+    },
+    "S2": {
+      "capacity_up": [
+        200,
+        200
+      ],
+      "recovered_level_down": [
+        150,
+        150
+      ]
+    },
+    "S3": {
+      "capacity_up": [
+        150,
+        150
+      ],
+      "recovered_level_down": [
+        150,
+        150
+      ]
+    }
+  },
+  "L0": 50,
+  "target_setting": "S3"
+}

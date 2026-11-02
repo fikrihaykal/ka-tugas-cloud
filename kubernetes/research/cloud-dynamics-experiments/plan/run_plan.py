@@ -15,6 +15,9 @@ RES = EXP / "results"
 MET = EXP.parent / "cloud-dynamics-metrics"
 REPO = EXP.parents[2]
 NS = "cloud-dynamics"
+import shutil
+if not shutil.which("kubectl"):
+    os.environ["PATH"] = str(Path(__file__).resolve().parent / "bin") + os.pathsep + os.environ["PATH"]
 HOST_IP = os.environ.get("HOST_IP", "127.0.0.1")
 TARGET_HOST = f"online-boutique.{HOST_IP}.sslip.io"
 URL = f"http://{TARGET_HOST}/"

@@ -1,0 +1,75 @@
+{
+  "experiment_id": "burst-flash-sale-20261102T060529Z-r3",
+  "application": "online-boutique",
+  "namespace": "cloud-dynamics",
+  "prometheus_url": "http://prometheus.127.0.0.1.sslip.io",
+  "start_epoch": 1793599559.0,
+  "end_epoch": 1793600247.0,
+  "step": 1.0,
+  "metrics": {
+    "CPU_USAGE": {
+      "status": "ok",
+      "rows": 42244
+    },
+    "CPU_THROTTLED": {
+      "status": "ok",
+      "rows": 0
+    },
+    "MEMORY_WORKING_SET": {
+      "status": "ok",
+      "rows": 42953
+    },
+    "NETWORK_RX": {
+      "status": "ok",
+      "rows": 42320
+    },
+    "NETWORK_TX": {
+      "status": "ok",
+      "rows": 42320
+    },
+    "RESTARTS": {
+      "status": "ok",
+      "rows": 42263
+    },
+    "READY_PODS": {
+      "status": "ok",
+      "rows": 689
+    },
+    "LINKERD_REQUEST_RATE": {
+      "status": "ok",
+      "rows": 0
+    },
+    "LINKERD_SUCCESS_RATE": {
+      "status": "ok",
+      "rows": 0
+    },
+    "LINKERD_LATENCY_P95": {
+      "status": "ok",
+      "rows": 0
+    },
+    "DESIRED_REPLICAS": {
+      "status": "ok",
+      "rows": 689
+    },
+    "INGRESS_REQUEST_RATE": {
+      "status": "ok",
+      "rows": 689
+    },
+    "INGRESS_5XX_RATE": {
+      "status": "ok",
+      "rows": 689
+    },
+    "INGRESS_4XX_RATE": {
+      "status": "ok",
+      "rows": 689
+    },
+    "INGRESS_P95_MS": {
+      "status": "ok",
+      "rows": 689
+    },
+    "INGRESS_CPU": {
+      "status": "ok",
+      "rows": 689
+    }
+  }
+}

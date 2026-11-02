@@ -1,0 +1,3 @@
+#!/bin/sh
+# kubectl via control-plane container, dipakai bila kubectl tidak ada di host
+exec docker exec -i mylab99-control-plane kubectl --kubeconfig /etc/kubernetes/admin.conf "$@"
