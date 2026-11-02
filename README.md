@@ -42,7 +42,7 @@ Comment di dalam blok = **satu kelompok perintah** (bukan per baris). Ada 1 bari
 .
 ├── docs/
 │   ├── images/           diagram README
-│   └── tugas-1.md        Tugas 1 Online Boutique (panduan lengkap)
+│   └── tugas-1/          Tugas 1 Online Boutique (panduan, rencana riset, analisis)
 ├── vm01/                 Modul 1 — mesin virtual
 ├── containers/
 │   ├── runc/             Modul 2 — runc
@@ -1014,14 +1014,14 @@ Profil lain (setelah baseline valid): `scenarios/ramp.env`, `burst.env`, `period
 
 Panduan lengkap (alat, tutor Octant/Grafana/Helm/Prometheus, preflight, eksperimen, troubleshoot) ada di file terpisah:
 
-**→ [docs/tugas-1.md](docs/tugas-1.md)**
+**→ [docs/tugas-1/panduan.md](docs/tugas-1/panduan.md)**
 
 Ringkas: SUT = Online Boutique; normal = `constant`; flash sale = `burst`; deliverable = dua set `workload.csv` + `combined.csv`. Prasyarat: **6.1** + **6.2** (Octant **6.3** disarankan). Sibling repo `ka-ecommerce-microservices` wajib.
 
 Setelah research selesai (Tugas 1 atau app lab lain), cabut workload dulu sebelum hapus cluster:
 
 ```bash
-# HOST — contoh cabut app lab; untuk boutique lihat docs/tugas-1.md bagian 6
+# HOST — contoh cabut app lab; untuk boutique lihat docs/tugas-1/panduan.md bagian 6
 cd kubernetes/research/cloud-dynamics-applications
 ./scripts/remove.sh online-boutique
 # atau: ./scripts/remove.sh stateless-api

@@ -8,7 +8,7 @@ from urllib.error import URLError, HTTPError
 def args():
     p = argparse.ArgumentParser()
     p.add_argument("--url", required=True)
-    p.add_argument("--profile", choices=["constant","ramp","burst","burst-flash-sale","periodic","variable"], required=True)
+    p.add_argument("--profile", choices=["constant","ramp","burst","burst-flash-sale","periodic","variable","step"], required=True)
     p.add_argument("--duration", type=float, required=True)
     p.add_argument("--timeout", type=float, default=5)
     p.add_argument("--sample-interval", type=float, default=1)
@@ -28,6 +28,7 @@ def args():
     p.add_argument("--change-interval", type=float, default=30)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--workers", type=int, default=256)
+    p.add_argument("--steps", help="step profile: rps:seconds,rps:seconds,...")
     return p.parse_args()
 
 def percentile(vals, q):
@@ -37,6 +38,13 @@ def percentile(vals, q):
     return s[i]
 
 def target_rate(a, elapsed, rng, variable_state):
+    if a.profile == "step":
+        t = 0.0
+        for rps, secs in a._steps:
+            t += secs
+            if elapsed < t:
+                return rps
+        return a._steps[-1][0]
     if a.profile == "constant":
         return max(0.0, a.rps)
     if a.profile == "ramp":
@@ -79,6 +87,8 @@ def one_request(url, timeout):
 
 def main():
     a = args()
+    if a.profile == "step":
+        a._steps = [(float(x.split(":")[0]), float(x.split(":")[1])) for x in a.steps.split(",")]
     rng = random.Random(a.seed)
     variable_state = [-1, 0.0]
     start = time.monotonic()

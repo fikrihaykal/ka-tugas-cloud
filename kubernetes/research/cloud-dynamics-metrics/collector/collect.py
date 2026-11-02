@@ -38,7 +38,7 @@ def write_metric(path,rows):
 def aggregate(rows):
     by={}
     for ts,_,v in rows: by.setdefault(round(ts,6),[]).append(v)
-    return {k:sum(v)/len(v) for k,v in by.items()}
+    return {k:sum(v) for k,v in by.items()}
 
 def nearest(d,t,tol):
     if not d:return ""
