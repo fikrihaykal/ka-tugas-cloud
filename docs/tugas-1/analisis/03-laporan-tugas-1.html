@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Laporan Tugas 1: scale-out reaktif datang setelah burst</title>
+<style>
+  body { font-family: "Ubuntu Sans", "Ubuntu", "DejaVu Sans", sans-serif; font-size: 10pt; line-height: 1.5; color: #0b0b0b; }
+  .kicker { font-size: 8.5pt; letter-spacing: 0.08em; text-transform: uppercase; color: #2a78d6; font-weight: bold; margin: 0 0 4px; }
+  h1 { font-size: 20pt; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 12.5pt; margin: 20px 0 5px; padding-top: 4px; border-top: 2px solid #0b0b0b; }
+  h3 { font-size: 10pt; margin: 12px 0 3px; }
+  p { margin: 0 0 7px; }
+  .sub { color: #52514e; font-size: 9.5pt; margin-bottom: 12px; }
+  .key { background: #eef4fc; border-left: 4px solid #2a78d6; padding: 8px 12px; margin: 8px 0 12px; }
+  .key p { margin: 0 0 4px; }
+  .warn { background: #fdf1ec; border-left: 4px solid #eb6834; padding: 8px 12px; margin: 8px 0 12px; }
+  .warn p { margin: 0 0 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 4px; font-size: 8.8pt; page-break-inside: avoid; }
+  th { text-align: left; background: #f3f2ef; border-bottom: 2px solid #0b0b0b; padding: 4px 6px; vertical-align: bottom; }
+  td { border-bottom: 1px solid #e6e5e1; padding: 4px 6px; vertical-align: top; }
+  td.n, th.n { text-align: right; }
+  img.fig { width: 100%; margin: 4px 0 2px; }
+  .cap { font-size: 8.5pt; color: #52514e; margin: 0 0 12px; }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; background: #f3f2ef; padding: 0 2px; }
+  ul, ol { margin: 0 0 8px; padding-left: 18px; }
+  li { margin-bottom: 3px; }
+  .nb { page-break-inside: avoid; }
+  .pb { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<p class="kicker">Tugas 1 — Cloud Experimental Environment</p>
+<h1>Scale-out reaktif datang setelah burst</h1>
+<p class="sub">Laporan dan ringkasan 29 run terencana pada Online Boutique (kind, 3 worker, host 12 core), 2 November 2026. Disusun mengikuti soal: Bagian 1 environment, Bagian 2 fenomena, Bagian 3 research problem.</p>
+
+<div class="key">
+<p><b>Ringkasan.</b></p>
+<ul>
+<li><b>Fenomena utama: scaling delay.</b> Pada burst 4× (50 → 200 RPS selama 60 detik), HPA CPU baru mendapat pod tambahan 28–35 detik setelah burst mulai, dan kapasitas penuh 122–185 detik setelah burst mulai. Akibatnya 34–42% request gagal selama burst. Pre-scale terjadwal 60 detik sebelum burst menghasilkan 0 request gagal pada 3 dari 3 run.</li>
+<li><b>Waktu scale-out terurai:</b> HPA membuat pod pertama 2–17 detik setelah burst mulai (deteksi cepat), tetapi pod butuh median sekitar 30 detik dari dibuat sampai Ready, dan HPA masih membuat pod sampai 64–130 detik. Yang lambat adalah rantai deteksi, penambahan bertahap, dan startup pod, bukan satu komponen saja.</li>
+<li><b>Temuan pendukung: pod tambahan tidak otomatis ikut bekerja.</b> Pada 20 pod <code>currencyservice</code>, 11–12 pod hampir menganggur sementara pod lain menyentuh limit CPU. Pre-scale menghilangkan kegagalan tetapi p95 tetap di atas 300 ms pada 26–58 dari 60 detik burst. Penyebab ketimpangan ini belum terbukti.</li>
+<li><b>Research problem:</b> bagaimana mendeteksi burst lebih awal dan memastikan kapasitas tambahan benar-benar melayani beban sebelum latency dan error naik.</li>
+</ul>
+</div>
+
+<h2>Bagian 1 — Environment dan dataset</h2>
+
+<table>
+<tr><th style="width:24%">Komponen</th><th>Yang dijalankan</th></tr>
+<tr><td>Cluster</td><td>kind <code>mylab99</code>: 1 control-plane + 3 worker, Kubernetes 1.28.13, di WSL2 (host 12 core). ingress-nginx sebagai pintu masuk.</td></tr>
+<tr><td>System under test</td><td>Online Boutique, 11 service gRPC/HTTP. Limit CPU per container 125–300m (<code>frontend</code> dan <code>currencyservice</code> 200m, request 100m).</td></tr>
+<tr><td>Workload generator</td><td><code>loadgen.py</code>: profil <code>constant</code>, <code>burst-flash-sale</code>, dan <code>step</code>. Dijalankan dari mesin yang sama dengan cluster.</td></tr>
+<tr><td>Monitoring</td><td>kube-prometheus-stack (Prometheus, Grafana). Collector menarik CPU, memory, network, pod Ready, dan metrik ingress untuk window run yang sama, lalu menggabungkannya ke <code>combined.csv</code> (1 baris per detik). Waktu pembuatan dan Ready pod diambil dari <code>kube-state-metrics</code>.</td></tr>
+<tr><td>Dataset</td><td>Dua run baseline Tugas 1 (<code>constant</code> dan <code>burst-flash-sale</code>) ditambah rencana riset yang dijalankan otomatis oleh <code>plan/run_plan.py</code>: <b>29 run, 6 jam 48 menit</b>, 0 sel gagal. Semua ada di <code>results/</code>, ringkasannya di <code>results/_plan/summary.csv</code>.</td></tr>
+</table>
+
+<table>
+<tr><th>Fase</th><th>Isi</th><th class="n">Run</th></tr>
+<tr><td>0 Baseline</td><td><code>burst-flash-sale</code> pada 15 pod (S1), dua profil</td><td class="n">2</td></tr>
+<tr><td>1 Kapasitas</td><td>Step load 10→200→10 RPS, 60 detik per tahap, pada S1 (15 pod), S2 (36 pod), S3 (67 pod), 2 kali tiap setting</td><td class="n">6</td></tr>
+<tr><td>2 Burst statis</td><td>Burst 4× dari L0 = 50 RPS (200 RPS selama 60 detik) pada S1, S2, S3 (3 kali), plus S2 dengan pod baru di-scale (3 kali)</td><td class="n">12</td></tr>
+<tr><td>3 Autoscale</td><td>Mulai dari S1 (15 pod), target S3 (67 pod): HPA CPU, pre-scale 60 detik, pre-scale 180 detik (3 kali tiap strategi)</td><td class="n">9</td></tr>
+</table>
+
+<p>Urutan run diacak (seed tetap). Sebelum tiap run: scale ke setting target, tunggu semua pod Ready, pemanasan 120 detik pada 25 RPS. Replica tiap run tercatat di <code>metadata.json</code>. SLO yang ditetapkan sebelum run: p95 &lt; 300 ms dan request gagal &lt; 1%. L0 = 50 RPS adalah beban tertinggi yang masih lolos SLO pada S1 (dari Fase 1). HPA memakai target CPU 50% dari request, min = S1 dan max = S3 per service.</p>
+
+<p><b>Yang tidak jadi dijalankan.</b> HPA berbasis RPS (KEDA) gagal dipasang karena <code>helm</code> tidak ada di PATH saat run, sehingga strategi sinyal-RPS belum punya data. Metrik <code>CPU_THROTTLED</code> kosong di Prometheus.</p>
+
+<h2>Bagian 2 — Fenomena: scale-out reaktif datang setelah burst</h2>
+
+<h3>2.1 Apa yang terjadi</h3>
+<p>Burst flash sale berlangsung 60 detik pada 4× beban normal. Pada kondisi awal S1, sistem hanya sanggup 50 RPS, sehingga burst 200 RPS memerlukan kapasitas tambahan. HPA CPU mendeteksi dan menambah pod dengan cepat, tetapi kapasitas tambahan baru melayani sesudah sebagian besar burst lewat. Selama menunggu, sekitar 145–165 dari 200 request per detik gagal.</p>
+
+<img class="fig" src="figures/03-waktu-scale-out.png">
+<p class="cap">Gambar 1. Tiga run HPA CPU (oranye) dan tiga run pre-scale 60 detik (biru), waktu relatif terhadap burst mulai. Area abu-abu: burst 60 detik. Kiri: pod Ready total. Kanan: request gagal per detik pada run HPA.</p>
+
+<table>
+<tr><th>Tahap scale-out (HPA CPU, 3 run)</th><th class="n">Terukur (detik setelah burst mulai)</th></tr>
+<tr><td>Pod pertama dibuat oleh HPA (deteksi)</td><td class="n">+2 sampai +17</td></tr>
+<tr><td>Kegagalan mulai</td><td class="n">+10 sampai +21</td></tr>
+<tr><td>Pod tambahan pertama Ready</td><td class="n">+28 sampai +35</td></tr>
+<tr><td>Kegagalan berhenti</td><td class="n">+34 sampai +52 (lama 24–31 detik)</td></tr>
+<tr><td>Separuh pod tambahan Ready</td><td class="n">+65 sampai +91</td></tr>
+<tr><td>Pod terakhir dibuat</td><td class="n">+64 sampai +130</td></tr>
+<tr><td>Jumlah pod puncak (47–49) Ready</td><td class="n">+122 sampai +185</td></tr>
+<tr><td>Waktu dari pod dibuat sampai Ready (semua pod baru)</td><td class="n">median ±30 s (6–63 s)</td></tr>
+</table>
+
+<h3>2.2 Pada kondisi apa</h3>
+<ul>
+<li>Burst 4× dari L0 (50 → 200 RPS) berdurasi 60 detik, dimulai dari 15 pod dengan HPA CPU (target 50%, maksimum 67 pod).</li>
+<li>Terjadi pada 3 dari 3 run HPA, dengan 4.042–5.007 request gagal per run (5,6–7,0% dari 72.000).</li>
+<li>Durasi burst pendek dibanding waktu scale-out. Kalau burst berlangsung lebih lama dari ±185 detik, HPA akan sempat mengejar, tetapi ini tidak diuji.</li>
+</ul>
+
+<h3>2.3 Metrik yang menunjukkan</h3>
+
+<img class="fig" src="figures/03-strategi-burst.png">
+<p class="cap">Gambar 2. Burst 4× (50 → 200 RPS, 60 detik). Satu titik per run (n = 3 tiap kolom), garis tebal median. p95 dibatasi timeout generator sekitar 5 detik.</p>
+
+<table>
+<tr><th>Strategi</th><th class="n">Pod saat burst</th><th class="n">Gagal saat burst</th><th class="n">p95 median saat burst (ms)</th><th class="n">Total gagal / run</th></tr>
+<tr><td>S1 statis</td><td class="n">15</td><td class="n">89–91%</td><td class="n">5045</td><td class="n">36–38 ribu</td></tr>
+<tr><td>HPA CPU (target 50%)</td><td class="n">21–23 → 47–49</td><td class="n">34–42%</td><td class="n">2302–5022</td><td class="n">4,0–5,0 ribu</td></tr>
+<tr><td>S2 statis</td><td class="n">36</td><td class="n">0%, 0%, 21%</td><td class="n">377, 413, 3638</td><td class="n">0, 0, 7,4 ribu</td></tr>
+<tr><td>S3 statis</td><td class="n">67</td><td class="n">0%</td><td class="n">105, 578, 583</td><td class="n">0</td></tr>
+<tr><td>Pre-scale 60 detik sebelum burst</td><td class="n">67</td><td class="n">0%</td><td class="n">278–517</td><td class="n">0</td></tr>
+<tr><td>Pre-scale 180 detik sebelum burst</td><td class="n">67</td><td class="n">0%</td><td class="n">267–458</td><td class="n">0</td></tr>
+</table>
+
+<p>Pre-scale 60 detik membuat 67 pod Ready sekitar 10–12 detik sebelum burst pada ketiga run. Request gagal nol, tetapi p95 masih di atas 300 ms pada 26, 33, dan 58 dari 60 detik burst. Jadi kapasitas yang datang tepat waktu menghilangkan kegagalan, tetapi belum memulihkan latency.</p>
+
+<h3>Temuan pendukung: replica tambahan tidak semuanya bekerja</h3>
+
+<img class="fig" src="figures/03-currency-per-pod.png">
+<p class="cap">Gambar 3. CPU rata-rata tiap pod <code>currencyservice</code> pada beban tertinggi di Fase 1 (S1 150 RPS, S2 dan S3 200 RPS), satu run per setting. Garis putus-putus: limit CPU 200m.</p>
+
+<ul>
+<li>Pada 200 RPS, S2 hanya memakai 5 dari 10 pod <code>currencyservice</code>, dan S3 hanya 8–9 dari 20. Pod yang aktif sebagian menyentuh limit 200m. Rasio pod tersibuk terhadap rata-rata: 2,6× (S2) dan 4,3× (S3).</li>
+<li>Kapasitas yang lolos SLO: S1 50 RPS, S2 200 RPS, S3 150 RPS. 31 pod tambahan dari S2 ke S3 tidak menambah kapasitas.</li>
+<li>Pada burst yang sama di S2, <code>currencyservice</code> memakai 0,40 core dengan 3–4 pod aktif (3 run), tetapi 0,63–0,66 core dengan 6 pod aktif pada S2 yang baru di-scale (3 run).</li>
+</ul>
+
+<h3>2.4 Mengapa penting di cloud</h3>
+<ul>
+<li><b>Elastisitas punya waktu tunda.</b> Cloud menjanjikan kapasitas sesuai kebutuhan, tetapi kapasitas baru tersedia 30 detik sampai 3 menit sesudah beban naik. Pada burst yang lebih pendek dari itu, autoscaling reaktif tidak melindungi request sama sekali.</li>
+<li><b>Request yang gagal tidak bisa dipulihkan.</b> Ketika kapasitas tiba, burst sudah lewat. Yang tersisa adalah pengguna yang gagal checkout dan pendapatan yang hilang.</li>
+<li><b>Sinyal CPU datang setelah antrean terbentuk.</b> HPA hanya bereaksi saat CPU pod sudah melewati ambang, ketika permintaan sudah menumpuk. Sinyal yang lebih awal (laju request di ingress, jadwal, atau prediksi) memberi waktu bagi pod untuk siap.</li>
+<li><b>Jumlah pod bukan ukuran kapasitas.</b> Pre-scale ke 67 pod menghilangkan kegagalan, tetapi p95 tetap tinggi dan S3 tidak melampaui S2. Autoscaler yang hanya menghitung pod bisa membayar kapasitas yang tidak terpakai.</li>
+<li><b>Ada pertukaran biaya.</b> Pre-scale menyiapkan 67 pod sebelum beban datang, sementara HPA hanya mencapai 47–49 pod. Kegagalan nol dibayar dengan pod yang menganggur lebih lama.</li>
+</ul>
+
+<div class="warn">
+<p><b>Batasan dan hal yang belum terbukti.</b></p>
+<ul>
+<li><b>Mekanisme ketimpangan beban belum diverifikasi.</b> Dugaan: <code>frontend</code> memakai satu koneksi gRPC jangka panjang ke tiap backend lewat ClusterIP, sehingga kube-proxy memilih pod hanya saat koneksi dibuat dan pod baru tidak ikut menerima beban. Pendukung: jumlah pod aktif mendekati hitungan pemilihan acak (8 frontend ke 10 pod ≈ 5,7 pod berbeda, teramati 5; 16 frontend ke 20 pod ≈ 11,9, teramati 8–9). Koneksinya belum diperiksa dan kode <code>frontend</code> belum dibaca.</li>
+<li><b>Sebagian waktu startup adalah setting pod.</b> Readiness probe memakai periode 10 detik (<code>frontend</code> juga initial delay 10 detik), jadi waktu "dibuat sampai Ready" ikut terkuantisasi oleh setting itu. Kontribusinya belum dipisahkan dari waktu start container.</li>
+<li><b>S2 yang baru di-scale lebih baik dari yang dipanaskan</b> (p95 158–232 vs 377–413 ms), bertentangan dengan hipotesis di rencana-riset.md. Penyebabnya belum jelas.</li>
+<li><b>Variasi antar run besar.</b> S2 statis: satu dari tiga run gagal 21%. S3 statis: p95 105, 578, 583 ms. n = 3 per sel, jadi selisih kecil antar kolom tidak boleh dibaca sebagai ranking.</li>
+<li>Generator dan cluster berbagi satu host, tetapi host tidak jenuh selama run (2–5 core sibuk dari 12, load average 3–6, steal dan iowait mendekati 0, dicek pada empat run). Waktu scale-out di cloud sungguhan, yang harus menyediakan node baru, akan lebih lama dari angka di sini, dan itu tidak diukur.</li>
+<li>Satu-satunya pembanding sinyal adalah CPU dan jadwal tetap. Sinyal berbasis RPS belum diuji.</li>
+</ul>
+</div>
+
+<h2 class="pb">Bagian 3 — Research problem</h2>
+
+<h3>3.1 Observasi yang mendasari</h3>
+<p>Eksperimen menunjukkan bahwa pada burst 60 detik, autoscaler reaktif berbasis CPU memberi kapasitas sesudah sebagian besar kerusakan terjadi: kegagalan mulai +10–21 detik, pod tambahan pertama Ready +28–35 detik, kapasitas penuh +122–185 detik. Pre-scale membuktikan bahwa kapasitas yang tersedia lebih awal menghilangkan kegagalan, tetapi tidak memulihkan p95, dan menambah pod tidak otomatis menambah kapasitas efektif karena sebagian replica tidak menerima beban.</p>
+
+<h3>3.2 Research question</h3>
+<div class="key">
+<p><b>Bagaimana mendeteksi burst workload lebih awal dan menyiapkan kapasitas yang benar-benar melayani beban, sehingga request gagal saat burst flash sale tetap di bawah 1% dan p95 tetap di bawah 300 ms, tanpa menyediakan seluruh kapasitas puncak sepanjang waktu?</b></p>
+</div>
+<p>Termasuk kategori <i>autoscaling</i> dan <i>resource allocation</i> dalam daftar soal, dengan unsur <i>workload prediction</i> (sinyal awal) dan <i>resource efficiency</i> (biaya pod yang disiapkan lebih awal). Ia lahir dari data cluster kind yang sama, dengan harness dan metrik yang sama.</p>
+
+<h3>3.3 Usulan kontribusi</h3>
+<ol>
+<li><b>Sinyal awal:</b> pemicu scale dari laju request di ingress (KEDA dengan query Prometheus, sudah disiapkan di <code>run_plan.py</code> tetapi belum terpasang) dan pre-scale terjadwal atau prediktif, menggantikan CPU.</li>
+<li><b>Kapasitas yang dipakai, bukan sekadar ada:</b> metrik kapasitas efektif (pod aktif terhadap total pod, pod tersibuk terhadap rata-rata) sebagai sinyal tambahan, dan load balancing per request (misalnya service mesh atau client-side balancing) agar replica baru ikut bekerja.</li>
+<li><b>Penyiapan lebih cepat dan hemat:</b> pod cadangan berprioritas rendah (overprovisioning) atau pool hangat, supaya kapasitas tersedia dalam hitungan detik, bukan 30 detik sampai beberapa menit.</li>
+</ol>
+
+<h3>3.4 Rancangan evaluasi</h3>
+<p>Memakai harness yang sudah ada: burst 4× dari L0 = 50 RPS, mulai dari S1, target maksimum 67 pod, 3 kali tiap sel atau lebih, urutan diacak, prosedur reset yang sama.</p>
+<table>
+<tr><th style="width:18%">Pembanding</th><th>Yang diubah</th><th style="width:30%">Status</th></tr>
+<tr><td>Baseline</td><td>HPA CPU</td><td>Sudah ada: 34–42% gagal</td></tr>
+<tr><td>A</td><td>Pre-scale terjadwal</td><td>Sudah ada: 0% gagal, p95 median 278–517 ms</td></tr>
+<tr><td>B</td><td>Sinyal RPS di ingress (KEDA), distribusi beban tidak diubah</td><td>Belum dijalankan</td></tr>
+<tr><td>C</td><td>Sinyal RPS + load balancing gRPC per request</td><td>Belum dijalankan</td></tr>
+<tr><td>D</td><td>C + pod cadangan berprioritas rendah</td><td>Belum dijalankan</td></tr>
+</table>
+<p>Ukuran: request gagal total, p95 saat burst, waktu dari burst mulai sampai kapasitas penuh dan sampai p95 &lt; 300 ms stabil, rasio pod aktif terhadap total pod, dan biaya (pod-detik). Kriteria berhasil: gagal &lt; 1%, p95 &lt; 300 ms, dan biaya pod-detik lebih rendah dari pre-scale penuh ke 67 pod.</p>
+
+<h3>3.5 Langkah verifikasi yang perlu dilakukan lebih dulu</h3>
+<ul>
+<li>Restart semua pod <code>frontend</code> pada S2, lalu bandingkan sebaran CPU antar pod <code>currencyservice</code> sebelum dan sesudah, untuk menguji dugaan koneksi gRPC yang tertambat.</li>
+<li>Pasang <code>helm</code> dan KEDA, lalu jalankan sel sinyal RPS.</li>
+<li>Pisahkan kontribusi readiness probe terhadap waktu "dibuat sampai Ready" (jalankan dengan periode probe lebih pendek).</li>
+</ul>
+
+<h2>Lampiran — alur untuk presentasi (10–12 slide)</h2>
+<table>
+<tr><th style="width:5%">#</th><th style="width:26%">Slide</th><th>Isi dari data ini</th></tr>
+<tr><td>1</td><td>Research context</td><td>Flash sale: beban naik 4× dalam sekejap, kapasitas harus siap dalam detik</td></tr>
+<tr><td>2</td><td>Experimental environment</td><td>kind 1+3 node, ingress-nginx, Prometheus/Grafana, loadgen (Bagian 1)</td></tr>
+<tr><td>3</td><td>Application architecture</td><td>Online Boutique, 11 service, <code>frontend</code> memanggil <code>currencyservice</code> dan service lain lewat gRPC</td></tr>
+<tr><td>4</td><td>Experimental setup</td><td>Setting S1/S2/S3, SLO, urutan acak, reset, 29 run</td></tr>
+<tr><td>5</td><td>Workload scenario</td><td>Step 10→200→10 RPS dan burst 50 → 200 RPS selama 60 detik</td></tr>
+<tr><td>6</td><td>Metrics dan data collection</td><td><code>workload.csv</code> + Prometheus → <code>combined.csv</code>, waktu pod dibuat dan Ready</td></tr>
+<tr><td>7</td><td>Experimental results</td><td>Gambar 2 dan tabel strategi</td></tr>
+<tr><td>8</td><td>Observed phenomenon</td><td>Gambar 1: kapasitas tiba setelah burst, kegagalan 24–31 detik; Gambar 3 sebagai pendukung</td></tr>
+<tr><td>9</td><td>Research problem dan question</td><td>Bagian 3.2</td></tr>
+<tr><td>10</td><td>Proposed contribution</td><td>Bagian 3.3</td></tr>
+<tr><td>11</td><td>Evaluation design</td><td>Bagian 3.4</td></tr>
+<tr><td>12</td><td>Expected contribution</td><td>Gagal &lt; 1% dan p95 &lt; 300 ms saat burst dengan biaya pod lebih rendah dari pre-scale penuh</td></tr>
+</table>
+
+</body>
+</html>
