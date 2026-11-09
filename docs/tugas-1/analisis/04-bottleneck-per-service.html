@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Analisis bottleneck per service: currencyservice</title>
+<style>
+  body { font-family: "Ubuntu Sans", "Ubuntu", "DejaVu Sans", sans-serif; font-size: 10pt; line-height: 1.5; color: #0b0b0b; }
+  .kicker { font-size: 8.5pt; letter-spacing: 0.08em; text-transform: uppercase; color: #2a78d6; font-weight: bold; margin: 0 0 4px; }
+  h1 { font-size: 20pt; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 12.5pt; margin: 20px 0 5px; padding-top: 4px; border-top: 2px solid #0b0b0b; }
+  h3 { font-size: 10pt; margin: 12px 0 3px; }
+  p { margin: 0 0 7px; }
+  .sub { color: #52514e; font-size: 9.5pt; margin-bottom: 12px; }
+  .key { background: #eef4fc; border-left: 4px solid #2a78d6; padding: 8px 12px; margin: 8px 0 12px; }
+  .key p { margin: 0 0 4px; }
+  .warn { background: #fdf1ec; border-left: 4px solid #eb6834; padding: 8px 12px; margin: 8px 0 12px; }
+  .warn p { margin: 0 0 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 4px; font-size: 8.8pt; page-break-inside: avoid; }
+  th { text-align: left; background: #f3f2ef; border-bottom: 2px solid #0b0b0b; padding: 4px 6px; vertical-align: bottom; }
+  td { border-bottom: 1px solid #e6e5e1; padding: 4px 6px; vertical-align: top; }
+  td.n, th.n { text-align: right; }
+  img.fig { width: 100%; margin: 4px 0 2px; }
+  .cap { font-size: 8.5pt; color: #52514e; margin: 0 0 12px; }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; background: #f3f2ef; padding: 0 2px; }
+  ul, ol { margin: 0 0 8px; padding-left: 18px; }
+  li { margin-bottom: 3px; }
+  .nb { page-break-inside: avoid; }
+  .pb { page-break-before: always; }
+</style>
+</head>
+<body>
+<p class="kicker">Tugas 1 — Cloud Experimental Environment</p>
+<h1>Bottleneck per service: yang jenuh adalah currencyservice</h1>
+<p class="sub">Lanjutan dari laporan 03. Analisis ulang data 29 run yang sudah ada (tanpa run baru), dari sudut perilaku service: ketika request gagal atau p95 naik, service mana yang jenuh dan resource apa penyebabnya. 3 November 2026.</p>
+
+<div class="key">
+<p><b>Ringkasan.</b></p>
+<ul>
+<li><b>Satu service yang jenuh.</b> Dari 11 service, hanya <code>currencyservice</code> yang CPU-nya menyentuh limit (200m): pada 20 dari 21 run burst puncak pod tersibuk mencapai 0,95–1,23 dari limit. Service lain paling tinggi <code>frontend</code> (0,92) dan <code>cartservice</code> (0,65). Memory tidak jenuh di mana pun (puncak 0,63 dari limit).</li>
+<li><b>Gejala di depan, penyebab di belakang.</b> Pada S1 statis, 89–91% request gagal sementara CPU <code>frontend</code> hanya 0,31 dari limit, tetapi satu-satunya pod <code>currencyservice</code> sudah 0,97–1,01 sebelum burst mulai. Kegagalan muncul 9–11 detik setelah burst. Pola ini konsisten dengan frontend menunggu <code>currencyservice</code>, bukan frontend yang kehabisan CPU.</li>
+<li><b>Pod itu juga restart.</b> Restart hanya terjadi pada <code>currencyservice</code>, di run yang mulai dari satu pod (S1 statis dan HPA CPU), 39–55 detik setelah burst. Bukan memory; diduga liveness probe gagal saat CPU di limit (belum terbukti).</li>
+<li><b>Titik kapasitas ditentukan olehnya.</b> Pada step load, p95 naik tajam persis ketika pod <code>currencyservice</code> tersibuk mendekati limit: S1 di 50–100 RPS, S2 dan S3 di 150–200 RPS.</li>
+<li><b>Pod tambahan tidak membagi beban merata.</b> Pada 50 RPS, pod tersibuk S2 (10 pod) dan S3 (20 pod) sama-sama 0,39 dari limit, 4× dan 8× di atas nilai jika beban merata. Pada burst, hanya 8–11 dari 20 pod <code>currencyservice</code> yang bekerja.</li>
+<li><b>Batas klaim.</b> Ini korelasi waktu dan pola resource, bukan bukti kausal per hop (metrik Linkerd dan throttling kosong). Beban hanya mengenai halaman utama, jadi checkout, payment, shipping, dan email tidak teruji.</li>
+</ul>
+</div>
+
+<h2>1. Data dan cara analisis</h2>
+<p>Semua dari <code>results/</code> yang sudah ada. Skripnya <code>analysis/saturation.py</code> (fase 2 dan 3) dan <code>analysis/step_saturation.py</code> (fase 1) di <code>cloud-dynamics-analysis-venv</code>.</p>
+<table>
+<tr><th style="width:26%">Bahan</th><th>Dipakai untuk</th></tr>
+<tr><td><code>workload.csv</code></td><td>Gejala sisi pengguna: request gagal per detik dan p95 per detik, sebagai penanda awal gagal.</td></tr>
+<tr><td><code>cpu_usage.csv</code> per pod</td><td>CPU tiap pod dibagi limit service-nya. Dikelompokkan per service, diambil pod tersibuk. Pod dianggap menyentuh limit jika ≥ 85% limit selama ≥ 3 detik berturut-turut.</td></tr>
+<tr><td><code>memory_working_set.csv</code> per pod</td><td>Memory terhadap limit, untuk menyingkirkan memory sebagai penyebab.</td></tr>
+<tr><td>Limit dari manifest</td><td>200m untuk <code>currencyservice</code>, <code>frontend</code>, dan sebagian besar service; 300m <code>adservice</code> dan <code>cartservice</code>; 125m <code>redis-cart</code>.</td></tr>
+</table>
+<p>Cakupan: 21 run burst (S1, S2, S2 baru di-scale, S3 statis; HPA CPU; pre-scale 60 dan 180 detik, masing-masing 3 kali) dan 6 run step load. Window burst diambil dari 5 detik sebelum burst sampai 60 detik sesudah burst berakhir.</p>
+
+<h2>2. Gejala di sisi pengguna</h2>
+<p>Ringkasan dari laporan 03: pada burst 4× (50 → 200 RPS selama 60 detik) dari 15 pod, S1 statis gagal 89–91%, HPA CPU 34–42%, S2 statis 0, 0, dan 21%, sedangkan S3 dan pre-scale 0%. Pertanyaan laporan ini: di mana di dalam aplikasi hambatan itu terjadi.</p>
+
+<h2>3. Penelusuran dari gejala ke service</h2>
+<h3>3.1 Siapa memanggil siapa</h3>
+<p>Generator hanya meminta halaman utama toko. Dari kode Online Boutique (bukan dari data ini dan belum diverifikasi pada fork yang dipakai), halaman itu dibangun oleh <code>frontend</code> dengan memanggil <code>productcatalogservice</code>, <code>currencyservice</code> (konversi harga), <code>cartservice</code> (lalu <code>redis-cart</code>), dan <code>adservice</code>. Jadi pada beban ini <code>frontend</code> bergantung pada empat service tersebut. <code>checkoutservice</code>, <code>paymentservice</code>, <code>shippingservice</code>, dan <code>emailservice</code> tidak dipanggil (CPU 0,00–0,01).</p>
+
+<h3>3.2 Service mana yang jenuh</h3>
+<img class="fig" src="figures/04-heatmap-saturasi.png">
+<p class="cap">Gambar 1. CPU pod tersibuk terhadap limit pada window burst, median tiga run per kolom, 21 run. Nilai 1,0 berarti pod itu memakai seluruh limit CPU-nya.</p>
+<table>
+<tr><th>Service</th><th class="n">Puncak CPU pod tersibuk / limit</th><th>Keterangan</th></tr>
+<tr><td><code>currencyservice</code></td><td class="n"><b>1,00–1,08</b></td><td>Menyentuh limit di setiap grup. Pada 20 dari 21 run puncak ≥ 0,95.</td></tr>
+<tr><td><code>frontend</code></td><td class="n">0,31–0,80</td><td>Naik hanya jika request lolos dari <code>currencyservice</code>. Tertinggi 0,92 pada satu run HPA.</td></tr>
+<tr><td><code>cartservice</code></td><td class="n">0,21–0,65</td><td>Tidak jenuh.</td></tr>
+<tr><td><code>adservice</code>, <code>productcatalogservice</code>, <code>redis-cart</code></td><td class="n">0,05–0,41</td><td>Tidak jenuh.</td></tr>
+<tr><td>Checkout, payment, shipping, email, recommendation</td><td class="n">≤ 0,01</td><td>Tidak dipanggil oleh beban ini.</td></tr>
+</table>
+
+<h3>3.3 Urutan kejadian pada S1</h3>
+<img class="fig" src="figures/04-timeline-s1-statis.png">
+<p class="cap">Gambar 2. S1 statis (15 pod, satu pod <code>currencyservice</code>), run 1. Atas: CPU pod tersibuk terhadap limit untuk lima service paling jenuh. Bawah: request gagal per detik. Area abu-abu: burst.</p>
+<table>
+<tr><th>Run S1 statis</th><th class="n">CPU currency sebelum burst</th><th class="n">CPU frontend puncak</th><th class="n">Gagal mulai (detik setelah burst)</th><th class="n">Gagal saat burst</th></tr>
+<tr><td>r1</td><td class="n">0,97</td><td class="n">0,31</td><td class="n">+11</td><td class="n">89,3%</td></tr>
+<tr><td>r2</td><td class="n">0,98</td><td class="n">0,31</td><td class="n">+10</td><td class="n">89,6%</td></tr>
+<tr><td>r3</td><td class="n">1,01</td><td class="n">0,31</td><td class="n">+9</td><td class="n">91,2%</td></tr>
+</table>
+<p>Pada 50 RPS (L0) satu pod <code>currencyservice</code> sudah memakai hampir seluruh limit 200m. Kapasitas S1 yang lolos SLO ada di titik ini, sehingga burst 4× tidak punya ruang sama sekali. Selama 90% request gagal, <code>frontend</code> hanya memakai sekitar sepertiga limit-nya. Ini konsisten dengan <code>frontend</code> menunggu <code>currencyservice</code>.</p>
+
+<h3>3.4 Titik kapasitas dari step load</h3>
+<img class="fig" src="figures/04-step-p95-currency.png">
+<p class="cap">Gambar 3. Step load tahap naik, median dua run per setting. Kiri: p95 per tahap (garis putus-putus: SLO 300 ms). Kanan: CPU rata-rata pod <code>currencyservice</code> tersibuk dibagi limit.</p>
+<table>
+<tr><th>Setting</th><th class="n">RPS</th><th class="n">p95 median (ms)</th><th class="n">Gagal (%)</th><th class="n">CPU currency tersibuk / limit</th><th class="n">CPU frontend tersibuk / limit</th></tr>
+<tr><td>S1 (15 pod)</td><td class="n">50</td><td class="n">112</td><td class="n">0</td><td class="n">0,92</td><td class="n">0,27</td></tr>
+<tr><td>S1</td><td class="n">100</td><td class="n">380</td><td class="n">0</td><td class="n">0,99</td><td class="n">0,35</td></tr>
+<tr><td>S1</td><td class="n">150</td><td class="n">5043</td><td class="n">58</td><td class="n">1,01</td><td class="n">0,29</td></tr>
+<tr><td>S2 (36 pod)</td><td class="n">150</td><td class="n">150</td><td class="n">0</td><td class="n">0,95</td><td class="n">0,58</td></tr>
+<tr><td>S2</td><td class="n">200</td><td class="n">216</td><td class="n">0</td><td class="n">1,03</td><td class="n">0,76</td></tr>
+<tr><td>S3 (67 pod)</td><td class="n">150</td><td class="n">194</td><td class="n">0</td><td class="n">0,99</td><td class="n">0,31</td></tr>
+<tr><td>S3</td><td class="n">200</td><td class="n">321</td><td class="n">0</td><td class="n">1,02</td><td class="n">0,41</td></tr>
+</table>
+<p>Di semua setting, p95 mulai membengkak ketika <code>currencyservice</code> mendekati limit (≈ 0,9–1,0), sedangkan CPU <code>frontend</code> masih rendah di S1 dan S3. Menambah pod dari S2 ke S3 tidak menggeser titik ini (p95 pada 200 RPS: 216 vs 321 ms).</p>
+
+<h2>4. Resource penyebab: CPU, dengan pembagian beban yang timpang</h2>
+<h3>4.1 CPU, bukan memory</h3>
+<p>Puncak memory <code>currencyservice</code> terhadap limit 128 MiB adalah 0,28–0,63 pada semua grup, jadi memory bukan penyebab. Restart dibahas di 4.2. Throttling CPU tidak bisa diperiksa karena metrik <code>CPU_THROTTLED</code> kosong. Yang bisa dipastikan hanya bahwa penggunaan CPU menempel di limit, bukan bahwa kernel men-throttle proses.</p>
+
+<h3>4.2 Pod tambahan tidak membagi beban merata</h3>
+<table>
+<tr><th>Grup (3 run)</th><th class="n">Pod currency</th><th class="n">Pod yang bekerja</th><th class="n">Pod di limit (maks)</th><th class="n">Pod tersibuk / rata-rata pod aktif</th></tr>
+<tr><td>S1 statis</td><td class="n">1</td><td class="n">1</td><td class="n">1</td><td class="n">1,0</td></tr>
+<tr><td>S2 statis</td><td class="n">10</td><td class="n">3–4</td><td class="n">1–2</td><td class="n">1,2–1,6</td></tr>
+<tr><td>S2 baru di-scale</td><td class="n">10–11</td><td class="n">6</td><td class="n">1–2</td><td class="n">1,3–1,5</td></tr>
+<tr><td>S3 statis</td><td class="n">20</td><td class="n">9</td><td class="n">1</td><td class="n">1,5–2,3</td></tr>
+<tr><td>HPA CPU</td><td class="n">18–20</td><td class="n">5–9</td><td class="n">3–4</td><td class="n">1,2–1,8</td></tr>
+<tr><td>Pre-scale 60 dan 180 detik</td><td class="n">20</td><td class="n">8–11</td><td class="n">1–2</td><td class="n">1,7–2,2</td></tr>
+</table>
+<p>"Pod yang bekerja" berarti CPU rata-rata di window lebih dari 10% limit. Pada setiap grup yang punya banyak pod, paling banyak 60% pod <code>currencyservice</code> ikut bekerja.</p>
+<p>Perbandingan lain dengan hanya angka dari data: pada 50 RPS satu pod S1 memakai 0,92 dari limit. Jika beban dibagi rata, pod di S2 (10 pod) akan memakai sekitar 0,09 dan di S3 (20 pod) sekitar 0,05. Yang terukur pada pod tersibuk adalah 0,39 di keduanya, sekitar 4× dan 8× lebih tinggi. Pod tersibuk S2 dan S3 sama pada 25, 50, dan 100 RPS (0,18–0,19; 0,39; 0,78) walau pod S3 dua kali lebih banyak. Jadi beban yang diterima pod tersibuk tidak turun ketika pod ditambah.</p>
+<img class="fig" src="figures/04-step-service.png">
+<p class="cap">Gambar 4. CPU pod tersibuk terhadap limit per service pada step load tahap naik, per setting.</p>
+
+<h3>4.3 Pod currencyservice yang jenuh ikut restart</h3>
+<p>Dari <code>restarts.csv</code> (selisih penghitung restart per pod, dibandingkan dengan awal burst): restart hanya terjadi pada <code>currencyservice</code>, dan hanya pada run yang memulai dari satu pod <code>currencyservice</code> (S1). Tidak ada service lain yang restart, dan tidak ada restart di S2, S3, maupun pre-scale.</p>
+<table>
+<tr><th>Grup</th><th>Restart <code>currencyservice</code> (detik setelah burst mulai)</th></tr>
+<tr><td>S1 statis r1</td><td>+55, +85, +115, +205</td></tr>
+<tr><td>S1 statis r2</td><td>+53, +83, +143</td></tr>
+<tr><td>S1 statis r3</td><td>+39, +68, +153</td></tr>
+<tr><td>HPA CPU r1, r2, r3</td><td>+49, +49, +43 (satu kali tiap run)</td></tr>
+<tr><td>Step load S1 (r1, r2)</td><td>2–3 kali, pada tahap 150–200 RPS (naik maupun turun)</td></tr>
+</table>
+<p>Memory pod itu 0,28–0,63 dari limit, jadi restart ini bukan kehabisan memory. Penyebab yang paling mungkin: manifest memakai <code>livenessProbe</code> gRPC pada port 7000 untuk <code>currencyservice</code>, dan pod yang CPU-nya di limit bisa gagal menjawab probe tepat waktu, sehingga kubelet mematikannya. Ini <b>dugaan</b>: event kubelet (<code>Unhealthy</code>, <code>Killing</code>) tidak ada di data. Jika benar, pod yang jenuh tidak hanya lambat tetapi hilang sementara, dan pada S1 itu berarti seluruh kapasitas <code>currencyservice</code> hilang selama pod di-restart.</p>
+
+<h3>4.4 Dugaan mekanisme pembagian beban (belum terbukti)</h3>
+<p>Dugaan dari laporan 03 tetap: <code>frontend</code> memegang koneksi gRPC jangka panjang ke <code>currencyservice</code> lewat ClusterIP, sehingga kube-proxy memilih pod hanya saat koneksi dibuat dan pod baru tidak menerima beban. Data di atas sejalan dengan itu (jumlah pod aktif jauh di bawah jumlah pod, dan pod tersibuk tidak mengikuti jumlah pod), tetapi bisa juga dijelaskan mekanisme lain. Verifikasinya butuh koneksi aktif per pod atau restart <code>frontend</code>, yang belum dilakukan.</p>
+
+<h2>5. Apa artinya untuk strategi scaling</h2>
+<ul>
+<li><b>HPA CPU dan pre-scale sama-sama berurusan dengan satu service.</b> HPA mulai dari satu pod <code>currencyservice</code> yang sudah penuh pada 50 RPS. Kegagalan muncul 10–21 detik setelah burst (S1 statis: 9–11 detik).</li>
+<li><b>Restart memperburuk kegagalan di S1.</b> Pada S1 dan HPA, satu-satunya pod <code>currencyservice</code> restart 39–55 detik setelah burst mulai (4.3).</li>
+<li><b>Pre-scale menghilangkan kegagalan, bukan kejenuhan.</b> Dengan 20 pod <code>currencyservice</code> sejak sebelum burst, 0 request gagal, tetapi pod tersibuk tetap menyentuh limit pada detik +25 sampai +46 dan bertahan 65–94 detik. Itu sebabnya p95 masih di atas 300 ms pada 26–58 dari 60 detik burst (laporan 03).</li>
+<li><b>Hitungan pod bukan ukuran kapasitas.</b> Kapasitas <code>currencyservice</code> yang berguna sama dengan jumlah pod yang benar-benar menerima beban, bukan <code>kube_deployment_spec_replicas</code>.</li>
+</ul>
+
+<h2>6. Batasan</h2>
+<div class="warn">
+<ul>
+<li><b>Korelasi, bukan kausal.</b> Tidak ada p95 dan error rate per service (<code>linkerd_*</code> kosong di 29 dari 29 run). Hubungan "frontend menunggu currency" disimpulkan dari CPU yang menempel di limit pada service itu dan rendah di frontend, bukan dari pengukuran di hop itu.</li>
+<li><b>Hanya halaman utama.</b> Hasil tidak berlaku untuk alur checkout. Service yang tidak dipanggil tidak bisa dinyatakan "tidak bermasalah".</li>
+<li><b>Resolusi CPU.</b> Metrik adalah <code>rate</code> 1 menit, sehingga waktu mulai jenuh bisa bergeser beberapa detik. Throttling tidak terukur.</li>
+<li><b>Daftar pod.</b> Jumlah pod "terlihat" dihitung dari semua pod yang muncul di window, termasuk yang baru dibuat HPA.</li>
+<li><b>Selisih S2 dan S3 belum dijelaskan.</b> Total CPU <code>currencyservice</code> pada puncak burst 0,53–0,56 core di S2 statis, tetapi 0,93–1,09 core di S3 dengan beban sama. Ini tidak bisa dijelaskan dari data yang ada.</li>
+<li><b>Kebergantungan antar service</b> berasal dari pengetahuan kode Online Boutique, bukan dari data.</li>
+<li>n = 3 per sel, jadi selisih kecil antar grup bukan ranking.</li>
+</ul>
+</div>
+
+<h2>7. Langkah berikutnya</h2>
+<ol>
+<li><b>Verifikasi mekanisme.</b> Hitung koneksi aktif per pod <code>currencyservice</code> dan baca kode <code>frontend</code>, lalu restart <code>frontend</code> dan lihat sebaran CPU berubah atau tidak.</li>
+<li><b>Perbaiki pengukuran.</b> Perbaiki query <code>CPU_THROTTLED</code>, aktifkan metrik Linkerd (p95 dan success rate per service), lalu ulang 3 run burst S1 dan HPA CPU. Dengan itu hubungan antar service bisa diuji per hop.</li>
+<li><b>Perluas beban.</b> Tambahkan alur yang memanggil checkout, payment, dan shipping, supaya service yang sekarang tidak teruji ikut dinilai.</li>
+</ol>
+
+</body>
+</html>

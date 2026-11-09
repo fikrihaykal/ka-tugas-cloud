@@ -13,3 +13,5 @@ Laporan analisis, urut menurut waktu:
 
 1. `01-run-tunggal-burst-flash-sale` — satu run `burst-flash-sale` (26 Okt, satu pod per service).
 2. `02-pemulihan-lambat-burst` — sembilan run dengan replica berbeda: pemulihan lambat dan kesiapan kapasitas.
+3. `03-laporan-tugas-1` — laporan Tugas 1: scale-out reaktif datang setelah burst (29 run terencana).
+4. `04-bottleneck-per-service` — analisis ulang data yang sama dari sisi service: `currencyservice` sebagai bottleneck (CPU di limit, pembagian beban timpang, restart).
